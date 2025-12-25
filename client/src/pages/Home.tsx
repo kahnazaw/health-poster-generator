@@ -281,7 +281,7 @@ The image should be suitable for a health awareness poster. No text in the image
               </div>
               <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-teal-600 to-amber-600 bg-clip-text text-transparent font-display">منصة التوعية الصحية</h1>
-                <p className="text-xs text-slate-500">دائرة صحة كركوك - وحدة تعزيز الصحة</p>
+                <p className="text-xs text-slate-500">دائرة صحة كركوك - قطاع كركوك الأول</p>
               </div>
             </div>
             
