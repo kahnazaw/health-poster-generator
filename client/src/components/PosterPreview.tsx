@@ -199,14 +199,16 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
                     {generatedContent.points.map((point, idx) => (
                       <motion.div 
                         key={idx}
-                        initial={{ opacity: 0, x: -20 }}
+                        initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.1 }}
                         className="flex items-start gap-3 p-3 rounded-xl border shadow-sm"
                         style={{ 
                           backgroundColor: colors.bg,
-                          borderColor: colors.primary + "20"
+                          borderColor: colors.primary + "20",
+                          direction: "rtl"
                         }}
+                        data-testid={`poster-point-${idx}`}
                       >
                         <span 
                           className="flex-shrink-0 w-10 h-10 rounded-full text-white flex items-center justify-center text-lg font-bold shadow-md"

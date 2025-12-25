@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Download, LayoutTemplate, FileText, UserCircle, Sparkles } from "lucide-react";
+import { Loader2, Download, LayoutTemplate, FileText, UserCircle, Sparkles, Image } from "lucide-react";
 
 interface ApprovedTopic {
   id: number;
@@ -13,9 +13,12 @@ interface GeneratorFormProps {
   onGenerate: (data: { topicId: number; centerName: string }) => void;
   onOrientationChange: (orientation: "portrait" | "landscape") => void;
   onDownload: () => void;
+  onGenerateImage?: () => void;
   orientation: "portrait" | "landscape";
   isGenerating: boolean;
+  isGeneratingImage?: boolean;
   hasContent: boolean;
+  hasImage?: boolean;
   selectedTopicId: number | null;
   onTopicChange: (topicId: number) => void;
   centerName: string;
@@ -26,9 +29,12 @@ export function GeneratorForm({
   onGenerate,
   onOrientationChange,
   onDownload,
+  onGenerateImage,
   orientation,
   isGenerating,
+  isGeneratingImage,
   hasContent,
+  hasImage,
   selectedTopicId,
   onTopicChange,
   centerName,
@@ -155,6 +161,34 @@ export function GeneratorForm({
               </>
             )}
           </button>
+
+          {hasContent && onGenerateImage && (
+            <button
+              type="button"
+              onClick={onGenerateImage}
+              disabled={isGeneratingImage}
+              className="
+                w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg shadow-violet-500/25
+                bg-gradient-to-r from-violet-500 to-purple-500 hover:to-purple-600
+                hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5 active:translate-y-0
+                disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+                flex items-center justify-center gap-3 transition-all duration-200
+              "
+              data-testid="button-generate-image"
+            >
+              {isGeneratingImage ? (
+                <>
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  جاري توليد الصورة...
+                </>
+              ) : (
+                <>
+                  <Image className="w-6 h-6" />
+                  {hasImage ? "توليد صورة جديدة" : "إضافة صورة بالذكاء الاصطناعي"}
+                </>
+              )}
+            </button>
+          )}
 
           {hasContent && (
             <button
