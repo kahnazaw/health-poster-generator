@@ -1,36 +1,95 @@
 import { useState, useRef } from "react";
+import { useLocation } from "wouter";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { GeneratorForm } from "@/components/GeneratorForm";
 import { PosterPreview } from "@/components/PosterPreview";
-import { useGeneratePoster, type PosterContent } from "@/hooks/use-poster";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { LogOut, Archive, User } from "lucide-react";
+import logoUrl from "@/assets/logo.png";
+
+interface PosterContent {
+  title: string;
+  points: string[];
+}
+
+interface ApprovedTopic {
+  id: number;
+  slug: string;
+  title: string;
+  points: string[];
+}
 
 export default function Home() {
   const [orientation, setOrientation] = useState<"portrait" | "landscape">("portrait");
   const [posterContent, setPosterContent] = useState<PosterContent | null>(null);
+  const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
+  const [centerName, setCenterName] = useState("");
   const posterRef = useRef<HTMLDivElement>(null);
   
+  const { user, logout, isLoading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const generateMutation = useGeneratePoster();
 
-  const handleGenerate = (data: { topic: string; centerName: string }) => {
-    generateMutation.mutate({ ...data, orientation }, {
-      onSuccess: (content) => {
-        setPosterContent(content);
-        toast({
-          title: "تم التوليد بنجاح!",
-          description: "تم إنشاء محتوى البوستر باستخدام الذكاء الاصطناعي.",
-        });
-      },
-      onError: () => {
-        toast({
-          title: "خطأ في التوليد",
-          description: "حدث خطأ أثناء محاولة توليد المحتوى. يرجى المحاولة مرة أخرى.",
-          variant: "destructive",
-        });
+  const { data: topics } = useQuery<ApprovedTopic[]>({
+    queryKey: ["/api/topics"],
+  });
+
+  const generateMutation = useMutation({
+    mutationFn: async (data: { topicId: number; centerName: string }) => {
+      const res = await apiRequest("POST", "/api/posters", { 
+        ...data, 
+        orientation 
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "فشل إنشاء البوستر");
       }
-    });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setPosterContent(data.content);
+      queryClient.invalidateQueries({ queryKey: ["/api/posters/archive"] });
+      toast({
+        title: "تم التوليد بنجاح!",
+        description: "تم إنشاء البوستر من المحتوى المعتمد.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleGenerate = (data: { topicId: number; centerName: string }) => {
+    if (!user) {
+      toast({
+        title: "يرجى تسجيل الدخول",
+        description: "يجب تسجيل الدخول لإنشاء بوستر",
+        variant: "destructive",
+      });
+      setLocation("/login");
+      return;
+    }
+    generateMutation.mutate(data);
+  };
+
+  const handleTopicChange = (topicId: number) => {
+    setSelectedTopicId(topicId);
+    const topic = topics?.find(t => t.id === topicId);
+    if (topic) {
+      setPosterContent({
+        title: topic.title,
+        points: topic.points,
+      });
+    }
   };
 
   const handleDownload = async () => {
@@ -44,23 +103,15 @@ export default function Home() {
 
       const element = posterRef.current;
       
-      // Temporarily remove scale transform for full resolution capture
-      const originalStyle = element.getAttribute("style");
-      const originalClass = element.getAttribute("class");
-      
-      // We need to clone or handle the scaled element properly for high res PDF.
-      // A common trick is to use html2canvas scale option.
-      
       const canvas = await html2canvas(element, {
-        scale: 2, // Higher quality
+        scale: 3,
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff"
       });
 
-      const imgData = canvas.toDataURL("image/jpeg", 1.0);
+      const imgData = canvas.toDataURL("image/png", 1.0);
       
-      // A4 dimensions in mm
       const pdf = new jsPDF({
         orientation: orientation,
         unit: "mm",
@@ -70,13 +121,12 @@ export default function Home() {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       pdf.save(`poster-${Date.now()}.pdf`);
 
       toast({
         title: "تم التحميل",
         description: "تم حفظ ملف البوستر بنجاح.",
-        className: "bg-green-600 text-white border-none",
       });
     } catch (error) {
       console.error("PDF Generation Error:", error);
@@ -88,17 +138,27 @@ export default function Home() {
     }
   };
 
+  const handleLogout = async () => {
+    await logout();
+    toast({ title: "تم تسجيل الخروج" });
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center" dir="rtl">
+        <div className="animate-pulse text-slate-500">جاري التحميل...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans" dir="rtl">
-      {/* Navbar */}
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
+          <div className="flex justify-between h-16 items-center gap-4">
             <div className="flex items-center gap-3">
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
+              <div className="w-12 h-12">
+                <img src={logoUrl} alt="شعار دائرة صحة كركوك" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-slate-900 font-display">منصة التوعية الصحية</h1>
@@ -106,10 +166,48 @@ export default function Home() {
               </div>
             </div>
             
-            <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-              <a href="#" className="hover:text-primary transition-colors">الرئيسية</a>
-              <a href="#" className="hover:text-primary transition-colors">الأرشيف</a>
-              <a href="#" className="hover:text-primary transition-colors">الإعدادات</a>
+            <div className="flex items-center gap-3">
+              {user ? (
+                <>
+                  <div className="hidden md:flex items-center gap-2 text-sm text-slate-600">
+                    <User className="w-4 h-4" />
+                    <span>{user.name}</span>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setLocation("/archive")}
+                    data-testid="button-archive"
+                  >
+                    <Archive className="w-4 h-4 ml-2" />
+                    الأرشيف
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={handleLogout}
+                    data-testid="button-logout"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button 
+                    variant="outline"
+                    onClick={() => setLocation("/login")}
+                    data-testid="button-login"
+                  >
+                    تسجيل الدخول
+                  </Button>
+                  <Button 
+                    onClick={() => setLocation("/register")}
+                    data-testid="button-register"
+                  >
+                    إنشاء حساب
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -118,7 +216,6 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
           
-          {/* Left Column: Form Controls */}
           <div className="lg:col-span-4 lg:sticky lg:top-24 h-fit space-y-6">
             <GeneratorForm 
               onGenerate={handleGenerate}
@@ -127,27 +224,24 @@ export default function Home() {
               orientation={orientation}
               isGenerating={generateMutation.isPending}
               hasContent={!!posterContent}
+              selectedTopicId={selectedTopicId}
+              onTopicChange={handleTopicChange}
+              centerName={centerName}
+              onCenterNameChange={setCenterName}
             />
             
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
-              <h4 className="font-bold mb-1 flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                ملاحظة
-              </h4>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+              <h4 className="font-bold mb-1">تنبيه رسمي</h4>
               <p className="opacity-90">
-                يتم توليد المحتوى تلقائياً باستخدام الذكاء الاصطناعي. يرجى مراجعة النصوص الطبية قبل النشر والطباعة.
+                هذه الرسالة أُعدّت وفق توجيهات وزارة الصحة العراقية. جميع النصوص معتمدة رسمياً.
               </p>
             </div>
           </div>
 
-          {/* Right Column: Live Preview */}
           <div className="lg:col-span-8">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-1">
               <div className="bg-slate-50 rounded-xl p-4 md:p-8 flex items-center justify-center min-h-[600px] lg:min-h-[800px] overflow-hidden relative">
                 
-                {/* Background Pattern */}
                 <div className="absolute inset-0 opacity-[0.03]" 
                   style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
@@ -157,8 +251,7 @@ export default function Home() {
                 <PosterPreview
                   ref={posterRef}
                   orientation={orientation}
-                  topic={posterContent ? posterContent.title : ""}
-                  centerName={posterContent ? "" : ""} // Corrected placeholder
+                  centerName={centerName}
                   generatedContent={posterContent}
                   isLoading={generateMutation.isPending}
                 />
