@@ -199,17 +199,17 @@ The image should be suitable for a health awareness poster. No text in the image
       const options = {
         margin: 10,
         filename: filename,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { 
           scale: 2, 
           useCORS: true,
           allowTaint: true,
-          logging: false
+          logging: true
         },
         jsPDF: { 
-          unit: 'mm', 
-          format: 'a4', 
-          orientation: orientation 
+          unit: 'mm' as const, 
+          format: 'a4' as const, 
+          orientation: orientation as 'portrait' | 'landscape'
         }
       };
 
