@@ -66,13 +66,14 @@ export async function registerRoutes(
       }
       
       const user = await storage.createUser(data);
-      req.session.userId = user.id;
       
       res.json({ 
         id: user.id, 
         name: user.name, 
         email: user.email,
         role: user.role,
+        status: user.status,
+        message: "تم إنشاء الحساب بنجاح. يرجى انتظار موافقة المدير.",
       });
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -89,6 +90,14 @@ export async function registerRoutes(
         return res.status(401).json({ message: "بيانات الدخول غير صحيحة" });
       }
       
+      if (user.status === "pending") {
+        return res.status(403).json({ message: "حسابك قيد المراجعة. يرجى انتظار موافقة المدير." });
+      }
+      
+      if (user.status === "rejected") {
+        return res.status(403).json({ message: "تم رفض طلب التسجيل الخاص بك." });
+      }
+      
       req.session.userId = user.id;
       
       res.json({ 
@@ -96,6 +105,7 @@ export async function registerRoutes(
         name: user.name, 
         email: user.email,
         role: user.role,
+        status: user.status,
       });
     } catch (error: any) {
       console.error("Login error:", error);
@@ -127,6 +137,7 @@ export async function registerRoutes(
       name: user.name, 
       email: user.email,
       role: user.role,
+      status: user.status,
     });
   });
 
@@ -207,11 +218,48 @@ export async function registerRoutes(
         name: u.name,
         email: u.email,
         role: u.role,
+        status: u.status,
         createdAt: u.createdAt,
       })));
     } catch (error) {
       console.error("Get users error:", error);
       res.status(500).json({ message: "فشل جلب المستخدمين" });
+    }
+  });
+
+  app.get("/api/admin/pending-users", requireAdmin, async (req, res) => {
+    try {
+      const users = await storage.getPendingUsers();
+      res.json(users.map(u => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        createdAt: u.createdAt,
+      })));
+    } catch (error) {
+      console.error("Get pending users error:", error);
+      res.status(500).json({ message: "فشل جلب المستخدمين المعلقين" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id/status", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (!["approved", "rejected"].includes(status)) {
+        return res.status(400).json({ message: "حالة غير صالحة" });
+      }
+      
+      const user = await storage.updateUserStatus(id, status);
+      if (!user) {
+        return res.status(404).json({ message: "مستخدم غير موجود" });
+      }
+      
+      res.json({ id: user.id, name: user.name, email: user.email, status: user.status });
+    } catch (error) {
+      console.error("Update status error:", error);
+      res.status(500).json({ message: "فشل تحديث الحالة" });
     }
   });
 
