@@ -31,6 +31,12 @@ export interface IStorage {
   getAllPosters(): Promise<(UserPoster & { topic: ApprovedTopic; user: { name: string } })[]>;
   
   getStats(): Promise<{ users: number; topics: number; posters: number }>;
+  getDetailedAnalytics(): Promise<{
+    postersByTopic: { topicTitle: string; count: number }[];
+    postersByCenter: { centerName: string; count: number }[];
+    postersByDate: { date: string; count: number }[];
+    recentActivity: { name: string; topic: string; date: string }[];
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -157,6 +163,58 @@ export class DatabaseStorage implements IStorage {
       users: Number(usersCount.count),
       topics: Number(topicsCount.count),
       posters: Number(postersCount.count),
+    };
+  }
+
+  async getDetailedAnalytics(): Promise<{
+    postersByTopic: { topicTitle: string; count: number }[];
+    postersByCenter: { centerName: string; count: number }[];
+    postersByDate: { date: string; count: number }[];
+    recentActivity: { name: string; topic: string; date: string }[];
+  }> {
+    const allPosters = await this.getAllPosters();
+    
+    const topicCounts: Record<string, number> = {};
+    const centerCounts: Record<string, number> = {};
+    const dateCounts: Record<string, number> = {};
+    
+    for (const poster of allPosters) {
+      const topicTitle = poster.topic.title;
+      topicCounts[topicTitle] = (topicCounts[topicTitle] || 0) + 1;
+      
+      const centerName = poster.centerName;
+      centerCounts[centerName] = (centerCounts[centerName] || 0) + 1;
+      
+      const date = new Date(poster.createdAt!).toISOString().split('T')[0];
+      dateCounts[date] = (dateCounts[date] || 0) + 1;
+    }
+    
+    const postersByTopic = Object.entries(topicCounts)
+      .map(([topicTitle, count]) => ({ topicTitle, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    
+    const postersByCenter = Object.entries(centerCounts)
+      .map(([centerName, count]) => ({ centerName, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    
+    const postersByDate = Object.entries(dateCounts)
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(-14);
+    
+    const recentActivity = allPosters.slice(0, 10).map(p => ({
+      name: p.user.name,
+      topic: p.topic.title,
+      date: new Date(p.createdAt!).toLocaleDateString('ar-IQ'),
+    }));
+    
+    return {
+      postersByTopic,
+      postersByCenter,
+      postersByDate,
+      recentActivity,
     };
   }
 }
