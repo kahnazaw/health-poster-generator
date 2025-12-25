@@ -166,20 +166,26 @@ The image should be suitable for a health awareness poster. No text in the image
     }
   };
 
+  const isMobileDevice = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+
+  const isIOSDevice = () => {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
+  };
+
   const handleDownload = async () => {
     if (!posterRef.current) return;
 
     try {
       playSound("click");
       toast({
-        title: "جاري التحضير...",
-        description: "يتم الآن تجهيز ملف PDF للتحميل.",
+        title: t("جاري التحضير...", "Preparing..."),
+        description: t("يتم الآن تجهيز ملف PDF للتحميل.", "Preparing PDF for download."),
       });
 
-      // Get the poster HTML content
       const posterHtml = posterRef.current.outerHTML;
       
-      // Get computed styles from the document
       const styles = Array.from(document.styleSheets)
         .map(sheet => {
           try {
@@ -209,17 +215,31 @@ The image should be suitable for a health awareness poster. No text in the image
 
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `poster-${Date.now()}.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
+      const filename = `poster-${Date.now()}.pdf`;
 
+      if (isIOSDevice()) {
+        window.open(url, '_blank');
+        toast({
+          title: t("تم فتح PDF", "PDF Opened"),
+          description: t("اضغط على زر المشاركة لحفظ الملف.", "Tap the share button to save the file."),
+        });
+      } else {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+          title: t("تم التحميل", "Download Complete"),
+          description: t("تم حفظ ملف البوستر بنجاح.", "Poster file saved successfully."),
+        });
+      }
+      
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
       playSound("success");
-      toast({
-        title: t("تم التحميل", "Download Complete"),
-        description: t("تم حفظ ملف البوستر بنجاح.", "Poster file saved successfully."),
-      });
     } catch (error) {
       console.error("PDF Generation Error:", error);
       playSound("error");
@@ -274,17 +294,31 @@ The image should be suitable for a health awareness poster. No text in the image
 
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `poster-${Date.now()}.png`;
-      link.click();
-      URL.revokeObjectURL(url);
+      const filename = `poster-${Date.now()}.png`;
 
+      if (isIOSDevice()) {
+        window.open(url, '_blank');
+        toast({
+          title: t("تم فتح الصورة", "Image Opened"),
+          description: t("اضغط مطولاً على الصورة لحفظها.", "Long-press the image to save it."),
+        });
+      } else {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+          title: t("تم التحميل", "Download Complete"),
+          description: t("تم حفظ الصورة بنجاح.", "Image saved successfully."),
+        });
+      }
+
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
       playSound("success");
-      toast({
-        title: t("تم التحميل", "Download Complete"),
-        description: t("تم حفظ الصورة بنجاح.", "Image saved successfully."),
-      });
     } catch (error) {
       console.error("Image Download Error:", error);
       playSound("error");
