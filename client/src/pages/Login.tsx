@@ -43,7 +43,7 @@ export default function Login() {
             <img src={logoUrl} alt="شعار دائرة صحة كركوك" className="w-full h-full object-contain" />
           </div>
           <CardTitle className="text-2xl">تسجيل الدخول</CardTitle>
-          <CardDescription>منصة التوعية الصحية - دائرة صحة كركوك</CardDescription>
+          <CardDescription>منصة التوعية الصحية - قطاع كركوك الأول</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
