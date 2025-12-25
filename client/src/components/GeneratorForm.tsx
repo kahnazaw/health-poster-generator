@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Download, LayoutTemplate, FileText, UserCircle, Sparkles, Image } from "lucide-react";
+import { Loader2, Download, LayoutTemplate, FileText, UserCircle, Sparkles, Image, Palette } from "lucide-react";
+import type { ColorTheme } from "@/pages/Home";
 
 interface ApprovedTopic {
   id: number;
@@ -23,6 +24,9 @@ interface GeneratorFormProps {
   onTopicChange: (topicId: number) => void;
   centerName: string;
   onCenterNameChange: (name: string) => void;
+  selectedTheme?: ColorTheme;
+  onThemeChange?: (theme: ColorTheme) => void;
+  colorThemes?: ColorTheme[];
 }
 
 export function GeneratorForm({
@@ -39,6 +43,9 @@ export function GeneratorForm({
   onTopicChange,
   centerName,
   onCenterNameChange,
+  selectedTheme,
+  onThemeChange,
+  colorThemes,
 }: GeneratorFormProps) {
   const { data: topics, isLoading: topicsLoading } = useQuery<ApprovedTopic[]>({
     queryKey: ["/api/topics"],
@@ -52,16 +59,18 @@ export function GeneratorForm({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-white/50 p-6 md:p-8 space-y-8 backdrop-blur-sm">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-slate-800 font-display">إعدادات البوستر</h2>
-        <p className="text-slate-500 text-sm">اختر الموضوع المعتمد من وزارة الصحة</p>
+    <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-slate-200/50 border border-white/50 p-6 md:p-8 space-y-6">
+      <div className="space-y-1">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-amber-600 bg-clip-text text-transparent font-display">إعدادات البوستر</h2>
+        <p className="text-slate-500 text-sm">اختر الموضوع وخصص التصميم</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
           <label htmlFor="centerName" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-            <UserCircle className="w-4 h-4 text-primary" />
+            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
+              <UserCircle className="w-3.5 h-3.5 text-white" />
+            </div>
             اسم المركز الصحي
           </label>
           <input
@@ -70,7 +79,7 @@ export function GeneratorForm({
             value={centerName}
             onChange={(e) => onCenterNameChange(e.target.value)}
             placeholder="مثال: مركز الزهراء الصحي"
-            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none text-slate-800 placeholder:text-slate-400"
+            className="w-full px-4 py-3.5 rounded-xl bg-slate-50/80 border border-slate-200 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 transition-all outline-none text-slate-800 placeholder:text-slate-400"
             required
             data-testid="input-center-name"
           />
@@ -78,14 +87,16 @@ export function GeneratorForm({
 
         <div className="space-y-2">
           <label htmlFor="topic" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-primary" />
+            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+              <FileText className="w-3.5 h-3.5 text-white" />
+            </div>
             الموضوع الصحي المعتمد
           </label>
           <select
             id="topic"
             value={selectedTopicId?.toString() || ""}
             onChange={(e) => onTopicChange(parseInt(e.target.value))}
-            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none text-slate-800"
+            className="w-full px-4 py-3.5 rounded-xl bg-slate-50/80 border border-slate-200 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 transition-all outline-none text-slate-800"
             required
             disabled={topicsLoading}
             data-testid="select-topic"
@@ -99,64 +110,106 @@ export function GeneratorForm({
           </select>
         </div>
 
+        {colorThemes && selectedTheme && onThemeChange && (
+          <div className="space-y-3">
+            <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <Palette className="w-3.5 h-3.5 text-white" />
+              </div>
+              نمط الألوان
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {colorThemes.map((theme) => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => onThemeChange(theme)}
+                  className={`
+                    relative p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2
+                    ${selectedTheme.id === theme.id 
+                      ? "border-slate-800 shadow-lg scale-105" 
+                      : "border-slate-100 hover:border-slate-200 hover:shadow-md"}
+                  `}
+                  data-testid={`button-theme-${theme.id}`}
+                >
+                  <div 
+                    className="w-full h-6 rounded-lg shadow-inner"
+                    style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})` }}
+                  />
+                  <span className="text-xs font-medium text-slate-600 truncate w-full text-center">{theme.name}</span>
+                  {selectedTheme.id === theme.id && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-slate-800 rounded-full flex items-center justify-center">
+                      <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-3">
           <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-            <LayoutTemplate className="w-4 h-4 text-primary" />
+            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+              <LayoutTemplate className="w-3.5 h-3.5 text-white" />
+            </div>
             اتجاه الصفحة
           </label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => onOrientationChange("portrait")}
               className={`
-                px-4 py-3 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all
+                px-4 py-3.5 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all
                 ${orientation === "portrait" 
-                  ? "border-primary bg-primary/5 text-primary shadow-sm" 
-                  : "border-slate-100 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:border-slate-200"}
+                  ? "border-teal-500 bg-teal-50 text-teal-700 shadow-lg shadow-teal-500/10" 
+                  : "border-slate-100 bg-slate-50/50 text-slate-500 hover:bg-slate-100 hover:border-slate-200"}
               `}
               data-testid="button-portrait"
             >
-              <div className="w-6 h-8 border-2 border-current rounded-sm bg-current/10" />
-              <span className="font-medium text-sm">عمودي (Portrait)</span>
+              <div className={`w-6 h-9 border-2 rounded-md ${orientation === "portrait" ? "border-teal-500 bg-teal-500/20" : "border-current bg-current/10"}`} />
+              <span className="font-medium text-sm">عمودي</span>
             </button>
             <button
               type="button"
               onClick={() => onOrientationChange("landscape")}
               className={`
-                px-4 py-3 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all
+                px-4 py-3.5 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all
                 ${orientation === "landscape" 
-                  ? "border-primary bg-primary/5 text-primary shadow-sm" 
-                  : "border-slate-100 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:border-slate-200"}
+                  ? "border-teal-500 bg-teal-50 text-teal-700 shadow-lg shadow-teal-500/10" 
+                  : "border-slate-100 bg-slate-50/50 text-slate-500 hover:bg-slate-100 hover:border-slate-200"}
               `}
               data-testid="button-landscape"
             >
-              <div className="w-8 h-6 border-2 border-current rounded-sm bg-current/10" />
-              <span className="font-medium text-sm">أفقي (Landscape)</span>
+              <div className={`w-9 h-6 border-2 rounded-md ${orientation === "landscape" ? "border-teal-500 bg-teal-500/20" : "border-current bg-current/10"}`} />
+              <span className="font-medium text-sm">أفقي</span>
             </button>
           </div>
         </div>
 
-        <div className="pt-4 space-y-3">
+        <div className="pt-2 space-y-3">
           <button
             type="submit"
             disabled={isGenerating || !selectedTopicId || !centerName.trim()}
             className="
-              w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg shadow-primary/25
-              bg-gradient-to-r from-primary to-primary/90 hover:to-primary
-              hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0
-              disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+              w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg shadow-teal-500/25
+              bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700
+              hover:shadow-xl hover:shadow-teal-500/30 hover:-translate-y-0.5 active:translate-y-0
+              disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:hover:shadow-lg
               flex items-center justify-center gap-3 transition-all duration-200
             "
             data-testid="button-generate"
           >
             {isGenerating ? (
               <>
-                <Loader2 className="w-6 h-6 animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin" />
                 جاري التوليد...
               </>
             ) : (
               <>
-                <Sparkles className="w-6 h-6" />
+                <Sparkles className="w-5 h-5" />
                 توليد البوستر
               </>
             )}
@@ -168,9 +221,9 @@ export function GeneratorForm({
               onClick={onGenerateImage}
               disabled={isGeneratingImage}
               className="
-                w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg shadow-violet-500/25
-                bg-gradient-to-r from-violet-500 to-purple-500 hover:to-purple-600
-                hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5 active:translate-y-0
+                w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg shadow-purple-500/25
+                bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600
+                hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5 active:translate-y-0
                 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
                 flex items-center justify-center gap-3 transition-all duration-200
               "
@@ -178,12 +231,12 @@ export function GeneratorForm({
             >
               {isGeneratingImage ? (
                 <>
-                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin" />
                   جاري توليد الصورة...
                 </>
               ) : (
                 <>
-                  <Image className="w-6 h-6" />
+                  <Image className="w-5 h-5" />
                   {hasImage ? "توليد صورة جديدة" : "إضافة صورة بالذكاء الاصطناعي"}
                 </>
               )}
@@ -195,14 +248,14 @@ export function GeneratorForm({
               type="button"
               onClick={onDownload}
               className="
-                w-full py-4 rounded-xl font-bold text-lg text-secondary-foreground shadow-lg shadow-secondary/20
-                bg-secondary hover:bg-secondary/90
-                hover:shadow-xl hover:shadow-secondary/25 hover:-translate-y-0.5 active:translate-y-0
+                w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg shadow-amber-500/25
+                bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600
+                hover:shadow-xl hover:shadow-amber-500/30 hover:-translate-y-0.5 active:translate-y-0
                 flex items-center justify-center gap-3 transition-all duration-200
               "
               data-testid="button-download"
             >
-              <Download className="w-6 h-6" />
+              <Download className="w-5 h-5" />
               تحميل PDF
             </button>
           )}

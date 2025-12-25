@@ -9,8 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { LogOut, Archive, User, Settings } from "lucide-react";
+import { LogOut, Archive, User, Settings, Share2, MessageCircle, Send, Sparkles, Heart } from "lucide-react";
+import { SiWhatsapp, SiTelegram } from "react-icons/si";
 import logoUrl from "@/assets/logo.png";
+import ministryLogoUrl from "@/assets/ministry-logo.png";
 
 interface PosterContent {
   title: string;
@@ -25,6 +27,24 @@ interface ApprovedTopic {
   points: string[];
 }
 
+export type ColorTheme = {
+  id: string;
+  name: string;
+  primary: string;
+  secondary: string;
+  gradient: string;
+  bg: string;
+};
+
+export const colorThemes: ColorTheme[] = [
+  { id: "teal-gold", name: "تركوازي ذهبي", primary: "#0d9488", secondary: "#f59e0b", gradient: "from-teal-500 to-amber-500", bg: "#f0fdfa" },
+  { id: "blue-purple", name: "أزرق بنفسجي", primary: "#3b82f6", secondary: "#8b5cf6", gradient: "from-blue-500 to-purple-500", bg: "#eff6ff" },
+  { id: "green-emerald", name: "أخضر طبي", primary: "#059669", secondary: "#10b981", gradient: "from-green-600 to-emerald-500", bg: "#ecfdf5" },
+  { id: "red-rose", name: "أحمر وردي", primary: "#dc2626", secondary: "#f43f5e", gradient: "from-red-500 to-rose-500", bg: "#fef2f2" },
+  { id: "indigo-sky", name: "نيلي سماوي", primary: "#4f46e5", secondary: "#0ea5e9", gradient: "from-indigo-500 to-sky-500", bg: "#eef2ff" },
+  { id: "orange-yellow", name: "برتقالي أصفر", primary: "#ea580c", secondary: "#eab308", gradient: "from-orange-500 to-yellow-500", bg: "#fff7ed" },
+];
+
 export default function Home() {
   const [orientation, setOrientation] = useState<"portrait" | "landscape">("portrait");
   const [posterContent, setPosterContent] = useState<PosterContent | null>(null);
@@ -32,6 +52,7 @@ export default function Home() {
   const [centerName, setCenterName] = useState("");
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState<ColorTheme>(colorThemes[0]);
   const posterRef = useRef<HTMLDivElement>(null);
   
   const { user, logout, isLoading: authLoading, isAdmin } = useAuth();
@@ -185,6 +206,47 @@ The image should be suitable for a health awareness poster. No text in the image
     }
   };
 
+  const handleShare = async (platform: "whatsapp" | "telegram") => {
+    if (!posterRef.current) return;
+
+    try {
+      const canvas = await html2canvas(posterRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff"
+      });
+      
+      const blob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((b) => resolve(b!), "image/png");
+      });
+
+      const text = posterContent 
+        ? `${posterContent.title}\n\n#صحتك_تهمنا #وعي_صحي\nدائرة صحة كركوك`
+        : "بوستر توعية صحية";
+
+      if (navigator.share && navigator.canShare({ files: [new File([blob], "poster.png", { type: "image/png" })] })) {
+        await navigator.share({
+          title: posterContent?.title || "بوستر صحي",
+          text: text,
+          files: [new File([blob], "poster.png", { type: "image/png" })]
+        });
+      } else {
+        const url = platform === "whatsapp" 
+          ? `https://wa.me/?text=${encodeURIComponent(text)}`
+          : `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(text)}`;
+        window.open(url, "_blank");
+      }
+
+      toast({
+        title: "تم فتح المشاركة",
+        description: `يمكنك الآن مشاركة البوستر عبر ${platform === "whatsapp" ? "واتساب" : "تيليجرام"}`,
+      });
+    } catch (error) {
+      console.error("Share error:", error);
+    }
+  };
+
   const handleLogout = async () => {
     await logout();
     toast({ title: "تم تسجيل الخروج" });
@@ -192,42 +254,55 @@ The image should be suitable for a health awareness poster. No text in the image
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center" dir="rtl">
-        <div className="animate-pulse text-slate-500">جاري التحميل...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-amber-50/30 flex items-center justify-center" dir="rtl">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-slate-600 font-medium">جاري التحميل...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans" dir="rtl">
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-amber-50/30 font-sans" dir="rtl">
+      <nav className="bg-white/80 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20 items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-16 h-16">
-                <img src={logoUrl} alt="شعار دائرة صحة كركوك" className="w-full h-full object-contain" />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 p-0.5 shadow-lg shadow-teal-500/20">
+                  <div className="w-full h-full bg-white rounded-xl flex items-center justify-center p-1">
+                    <img src={logoUrl} alt="شعار دائرة صحة كركوك" className="w-full h-full object-contain" />
+                  </div>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-white border border-slate-100 shadow-sm p-1">
+                  <img src={ministryLogoUrl} alt="شعار وزارة الصحة" className="w-full h-full object-contain" />
+                </div>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900 font-display">منصة التوعية الصحية</h1>
-                <p className="text-sm text-slate-500">دائرة صحة كركوك - قطاع كركوك الأول - وحدة تعزيز الصحة</p>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-teal-600 to-amber-600 bg-clip-text text-transparent font-display">منصة التوعية الصحية</h1>
+                <p className="text-xs text-slate-500">دائرة صحة كركوك - وحدة تعزيز الصحة</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {user ? (
                 <>
-                  <div className="hidden md:flex items-center gap-2 text-sm text-slate-600">
-                    <User className="w-4 h-4" />
-                    <span>{user.name}</span>
+                  <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full text-sm text-slate-600">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-teal-500 to-amber-500 flex items-center justify-center">
+                      <User className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <span className="font-medium">{user.name}</span>
                   </div>
                   {isAdmin && (
                     <Button 
                       variant="default" 
                       size="sm"
                       onClick={() => setLocation("/dashboard")}
+                      className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 shadow-md shadow-teal-500/20"
                       data-testid="button-dashboard"
                     >
-                      <Settings className="w-4 h-4 ml-2" />
+                      <Settings className="w-4 h-4 ml-1" />
                       لوحة التحكم
                     </Button>
                   )}
@@ -235,14 +310,15 @@ The image should be suitable for a health awareness poster. No text in the image
                     variant="outline" 
                     size="sm"
                     onClick={() => setLocation("/archive")}
+                    className="border-slate-200"
                     data-testid="button-archive"
                   >
-                    <Archive className="w-4 h-4 ml-2" />
+                    <Archive className="w-4 h-4 ml-1" />
                     الأرشيف
                   </Button>
                   <Button 
                     variant="ghost" 
-                    size="sm"
+                    size="icon"
                     onClick={handleLogout}
                     data-testid="button-logout"
                   >
@@ -252,7 +328,7 @@ The image should be suitable for a health awareness poster. No text in the image
               ) : (
                 <>
                   <Button 
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => setLocation("/login")}
                     data-testid="button-login"
                   >
@@ -260,8 +336,10 @@ The image should be suitable for a health awareness poster. No text in the image
                   </Button>
                   <Button 
                     onClick={() => setLocation("/register")}
+                    className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 shadow-md shadow-teal-500/20"
                     data-testid="button-register"
                   >
+                    <Sparkles className="w-4 h-4 ml-1" />
                     إنشاء حساب
                   </Button>
                 </>
@@ -272,38 +350,77 @@ The image should be suitable for a health awareness poster. No text in the image
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
           
-          <div className="lg:col-span-4 lg:sticky lg:top-24 h-fit space-y-6">
-            <GeneratorForm 
-              onGenerate={handleGenerate}
-              onOrientationChange={setOrientation}
-              onDownload={handleDownload}
-              onGenerateImage={handleGenerateImage}
-              orientation={orientation}
-              isGenerating={generateMutation.isPending}
-              isGeneratingImage={isGeneratingImage}
-              hasContent={!!posterContent}
-              hasImage={!!generatedImage}
-              selectedTopicId={selectedTopicId}
-              onTopicChange={handleTopicChange}
-              centerName={centerName}
-              onCenterNameChange={setCenterName}
-            />
-            
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-              <h4 className="font-bold mb-1">تنبيه رسمي</h4>
-              <p className="opacity-90">
-                هذه الرسالة أُعدّت وفق توجيهات وزارة الصحة العراقية. جميع النصوص معتمدة رسمياً.
-              </p>
+          <div className="lg:col-span-4 space-y-6">
+            <div className="lg:sticky lg:top-28 space-y-6">
+              <GeneratorForm 
+                onGenerate={handleGenerate}
+                onOrientationChange={setOrientation}
+                onDownload={handleDownload}
+                onGenerateImage={handleGenerateImage}
+                orientation={orientation}
+                isGenerating={generateMutation.isPending}
+                isGeneratingImage={isGeneratingImage}
+                hasContent={!!posterContent}
+                hasImage={!!generatedImage}
+                selectedTopicId={selectedTopicId}
+                onTopicChange={handleTopicChange}
+                centerName={centerName}
+                onCenterNameChange={setCenterName}
+                selectedTheme={selectedTheme}
+                onThemeChange={setSelectedTheme}
+                colorThemes={colorThemes}
+              />
+
+              {posterContent && (
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 p-5 shadow-lg shadow-slate-200/30">
+                  <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                    <Share2 className="w-4 h-4 text-teal-500" />
+                    مشاركة البوستر
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => handleShare("whatsapp")}
+                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-medium shadow-lg shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5 transition-all"
+                      data-testid="button-share-whatsapp"
+                    >
+                      <SiWhatsapp className="w-5 h-5" />
+                      واتساب
+                    </button>
+                    <button
+                      onClick={() => handleShare("telegram")}
+                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all"
+                      data-testid="button-share-telegram"
+                    >
+                      <SiTelegram className="w-5 h-5" />
+                      تيليجرام
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                    <Heart className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-amber-900 mb-1">تنبيه رسمي</h4>
+                    <p className="text-sm text-amber-800/80 leading-relaxed">
+                      هذه الرسالة أُعدّت وفق توجيهات وزارة الصحة العراقية. جميع النصوص معتمدة رسمياً.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
           <div className="lg:col-span-8">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-1">
-              <div className="bg-slate-50 rounded-xl p-4 md:p-8 flex items-center justify-center min-h-[600px] lg:min-h-[800px] overflow-hidden relative">
+            <div className="bg-white/60 backdrop-blur-sm rounded-3xl border border-slate-200/50 shadow-xl shadow-slate-200/40 p-2">
+              <div className="bg-gradient-to-br from-slate-100 to-slate-50 rounded-2xl p-6 md:p-10 flex items-center justify-center min-h-[600px] lg:min-h-[800px] overflow-hidden relative">
                 
-                <div className="absolute inset-0 opacity-[0.03]" 
+                <div className="absolute inset-0 opacity-[0.02]" 
                   style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
                   }}
@@ -316,18 +433,37 @@ The image should be suitable for a health awareness poster. No text in the image
                   generatedContent={posterContent}
                   isLoading={generateMutation.isPending}
                   generatedImage={generatedImage}
+                  theme={selectedTheme}
                 />
               </div>
             </div>
             
-            <div className="mt-4 flex justify-between items-center text-sm text-slate-500 px-2">
-              <p>معاينة حية - A4 {orientation === 'portrait' ? 'عمودي' : 'أفقي'}</p>
-              <p>210 × 297 مم</p>
+            <div className="mt-4 flex justify-between items-center text-sm text-slate-500 px-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></div>
+                <span>معاينة حية - A4 {orientation === 'portrait' ? 'عمودي' : 'أفقي'}</span>
+              </div>
+              <p className="font-mono text-xs bg-slate-100 px-2 py-1 rounded-md">210 × 297 مم</p>
             </div>
           </div>
           
         </div>
       </main>
+
+      <footer className="mt-12 border-t border-slate-200/50 bg-white/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
+            <div className="flex items-center gap-2">
+              <span>برمجة وتصميم:</span>
+              <span className="font-semibold text-slate-700">م. صيدلي علاء صالح أحمد</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-teal-600 font-medium">#صحتك_تهمنا</span>
+              <span className="text-amber-600 font-medium">#وعي_صحي</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

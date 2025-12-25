@@ -359,6 +359,16 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/analytics", requireAdmin, async (req, res) => {
+    try {
+      const analytics = await storage.getDetailedAnalytics();
+      res.json(analytics);
+    } catch (error) {
+      console.error("Get analytics error:", error);
+      res.status(500).json({ message: "فشل جلب التحليلات" });
+    }
+  });
+
   registerImageRoutes(app);
 
   return httpServer;
