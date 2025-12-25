@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { LogOut, Archive, User } from "lucide-react";
+import { LogOut, Archive, User, Settings } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 
 interface PosterContent {
@@ -31,7 +31,7 @@ export default function Home() {
   const [centerName, setCenterName] = useState("");
   const posterRef = useRef<HTMLDivElement>(null);
   
-  const { user, logout, isLoading: authLoading } = useAuth();
+  const { user, logout, isLoading: authLoading, isAdmin } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -173,6 +173,17 @@ export default function Home() {
                     <User className="w-4 h-4" />
                     <span>{user.name}</span>
                   </div>
+                  {isAdmin && (
+                    <Button 
+                      variant="default" 
+                      size="sm"
+                      onClick={() => setLocation("/dashboard")}
+                      data-testid="button-dashboard"
+                    >
+                      <Settings className="w-4 h-4 ml-2" />
+                      لوحة التحكم
+                    </Button>
+                  )}
                   <Button 
                     variant="outline" 
                     size="sm"

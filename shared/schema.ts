@@ -7,6 +7,7 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  role: text("role").default("user"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -30,7 +31,8 @@ export const userPosters = pgTable("user_posters", {
 export const insertUserSchema = createInsertSchema(users).omit({ 
   id: true, 
   createdAt: true,
-  passwordHash: true 
+  passwordHash: true,
+  role: true,
 }).extend({
   password: z.string().min(6),
 });

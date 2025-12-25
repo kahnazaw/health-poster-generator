@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, loginSchema } from "@shared/schema";
+import { insertUserSchema, loginSchema, insertApprovedTopicSchema } from "@shared/schema";
 import session from "express-session";
 import { seedTopics } from "./seed";
 import connectPgSimple from "connect-pg-simple";
@@ -16,6 +16,17 @@ declare module "express-session" {
 const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   if (!req.session.userId) {
     return res.status(401).json({ message: "غير مصرح" });
+  }
+  next();
+};
+
+const requireAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "غير مصرح" });
+  }
+  const user = await storage.getUserById(req.session.userId);
+  if (!user || user.role !== "admin") {
+    return res.status(403).json({ message: "صلاحيات المدير مطلوبة" });
   }
   next();
 };
@@ -60,7 +71,8 @@ export async function registerRoutes(
       res.json({ 
         id: user.id, 
         name: user.name, 
-        email: user.email 
+        email: user.email,
+        role: user.role,
       });
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -82,7 +94,8 @@ export async function registerRoutes(
       res.json({ 
         id: user.id, 
         name: user.name, 
-        email: user.email 
+        email: user.email,
+        role: user.role,
       });
     } catch (error: any) {
       console.error("Login error:", error);
@@ -112,7 +125,8 @@ export async function registerRoutes(
     res.json({ 
       id: user.id, 
       name: user.name, 
-      email: user.email 
+      email: user.email,
+      role: user.role,
     });
   });
 
@@ -172,6 +186,127 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Archive error:", error);
       res.status(500).json({ message: "فشل جلب الأرشيف" });
+    }
+  });
+
+  app.get("/api/admin/stats", requireAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Stats error:", error);
+      res.status(500).json({ message: "فشل جلب الإحصائيات" });
+    }
+  });
+
+  app.get("/api/admin/users", requireAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users.map(u => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        createdAt: u.createdAt,
+      })));
+    } catch (error) {
+      console.error("Get users error:", error);
+      res.status(500).json({ message: "فشل جلب المستخدمين" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id/role", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { role } = req.body;
+      
+      if (!["user", "admin"].includes(role)) {
+        return res.status(400).json({ message: "صلاحية غير صالحة" });
+      }
+      
+      const user = await storage.updateUserRole(id, role);
+      if (!user) {
+        return res.status(404).json({ message: "مستخدم غير موجود" });
+      }
+      
+      res.json({ id: user.id, name: user.name, email: user.email, role: user.role });
+    } catch (error) {
+      console.error("Update role error:", error);
+      res.status(500).json({ message: "فشل تحديث الصلاحية" });
+    }
+  });
+
+  app.delete("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (id === req.session.userId) {
+        return res.status(400).json({ message: "لا يمكنك حذف نفسك" });
+      }
+      
+      await storage.deleteUser(id);
+      res.json({ message: "تم حذف المستخدم" });
+    } catch (error) {
+      console.error("Delete user error:", error);
+      res.status(500).json({ message: "فشل حذف المستخدم" });
+    }
+  });
+
+  app.get("/api/admin/topics", requireAdmin, async (req, res) => {
+    try {
+      const topics = await storage.getAllTopics();
+      res.json(topics);
+    } catch (error) {
+      console.error("Get topics error:", error);
+      res.status(500).json({ message: "فشل جلب المواضيع" });
+    }
+  });
+
+  app.post("/api/admin/topics", requireAdmin, async (req, res) => {
+    try {
+      const data = insertApprovedTopicSchema.parse(req.body);
+      const topic = await storage.createApprovedTopic(data);
+      res.json(topic);
+    } catch (error: any) {
+      console.error("Create topic error:", error);
+      res.status(400).json({ message: error.message || "فشل إنشاء الموضوع" });
+    }
+  });
+
+  app.patch("/api/admin/topics/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const topic = await storage.updateApprovedTopic(id, req.body);
+      
+      if (!topic) {
+        return res.status(404).json({ message: "موضوع غير موجود" });
+      }
+      
+      res.json(topic);
+    } catch (error) {
+      console.error("Update topic error:", error);
+      res.status(500).json({ message: "فشل تحديث الموضوع" });
+    }
+  });
+
+  app.delete("/api/admin/topics/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteApprovedTopic(id);
+      res.json({ message: "تم حذف الموضوع" });
+    } catch (error) {
+      console.error("Delete topic error:", error);
+      res.status(500).json({ message: "فشل حذف الموضوع" });
+    }
+  });
+
+  app.get("/api/admin/posters", requireAdmin, async (req, res) => {
+    try {
+      const posters = await storage.getAllPosters();
+      res.json(posters);
+    } catch (error) {
+      console.error("Get all posters error:", error);
+      res.status(500).json({ message: "فشل جلب البوسترات" });
     }
   });
 

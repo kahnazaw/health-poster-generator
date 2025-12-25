@@ -9,6 +9,9 @@ import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Archive from "@/pages/Archive";
+import Dashboard from "@/pages/Dashboard";
+import AdminTopics from "@/pages/AdminTopics";
+import AdminUsers from "@/pages/AdminUsers";
 
 function Router() {
   return (
@@ -17,6 +20,9 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/archive" component={Archive} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/admin/topics" component={AdminTopics} />
+      <Route path="/admin/users" component={AdminUsers} />
       <Route component={NotFound} />
     </Switch>
   );
