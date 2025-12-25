@@ -18,11 +18,11 @@ interface UserData {
 }
 
 export default function AdminUsers() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const { data: users, isLoading } = useQuery<UserData[]>({
+  const { data: users, isLoading: usersLoading } = useQuery<UserData[]>({
     queryKey: ["/api/admin/users"],
     enabled: isAdmin,
   });
@@ -60,7 +60,20 @@ export default function AdminUsers() {
     },
   });
 
-  if (!user || !isAdmin) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center" dir="rtl">
+        <div className="animate-pulse text-slate-500">جاري التحميل...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    setLocation("/login");
+    return null;
+  }
+
+  if (!isAdmin) {
     setLocation("/");
     return null;
   }
@@ -97,7 +110,7 @@ export default function AdminUsers() {
           <h2 className="text-xl font-bold">المستخدمون ({users?.length || 0})</h2>
         </div>
 
-        {isLoading ? (
+        {usersLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="animate-pulse">
