@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useSound } from "@/hooks/use-sound";
 import logoUrl from "@/assets/logo.png";
 
 export default function Login() {
@@ -15,16 +16,20 @@ export default function Login() {
   const { login } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { playSound } = useSound();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    playSound("click");
     setIsLoading(true);
     
     try {
       await login(email, password);
+      playSound("success");
       toast({ title: "تم تسجيل الدخول بنجاح" });
       setLocation("/");
     } catch (error: any) {
+      playSound("error");
       toast({ 
         title: "فشل تسجيل الدخول", 
         description: error.message,

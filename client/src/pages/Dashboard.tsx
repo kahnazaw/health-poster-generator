@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useSound } from "@/hooks/use-sound";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,7 @@ const COLORS = ['#0d9488', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#10b981'
 export default function Dashboard() {
   const { user, isAdmin, isLoading } = useAuth();
   const [, setLocation] = useLocation();
+  const { playSound } = useSound();
 
   const { data: stats, isLoading: statsLoading } = useQuery<Stats>({
     queryKey: ["/api/admin/stats"],
@@ -90,7 +92,7 @@ export default function Dashboard() {
             
             <Button 
               variant="outline" 
-              onClick={() => setLocation("/")}
+              onClick={() => { playSound("click"); setLocation("/"); }}
               className="border-slate-200"
               data-testid="button-back-home"
             >
@@ -304,7 +306,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <Card 
             className="bg-white/80 backdrop-blur-sm border-slate-200/50 shadow-lg shadow-slate-200/30 cursor-pointer hover:shadow-xl hover:-translate-y-0.5 transition-all" 
-            onClick={() => setLocation("/admin/topics")}
+            onClick={() => { playSound("click"); setLocation("/admin/topics"); }}
             data-testid="card-manage-topics"
           >
             <CardContent className="pt-6">
@@ -322,7 +324,7 @@ export default function Dashboard() {
 
           <Card 
             className="bg-white/80 backdrop-blur-sm border-slate-200/50 shadow-lg shadow-slate-200/30 cursor-pointer hover:shadow-xl hover:-translate-y-0.5 transition-all relative" 
-            onClick={() => setLocation("/admin/users")}
+            onClick={() => { playSound("click"); setLocation("/admin/users"); }}
             data-testid="card-manage-users"
           >
             {pendingUsers && pendingUsers.length > 0 && (
@@ -350,7 +352,7 @@ export default function Dashboard() {
 
           <Card 
             className="bg-white/80 backdrop-blur-sm border-slate-200/50 shadow-lg shadow-slate-200/30 cursor-pointer hover:shadow-xl hover:-translate-y-0.5 transition-all" 
-            onClick={() => setLocation("/admin/posters")}
+            onClick={() => { playSound("click"); setLocation("/admin/posters"); }}
             data-testid="card-view-posters"
           >
             <CardContent className="pt-6">

@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useSound } from "@/hooks/use-sound";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ export default function AdminTopics() {
   const { user, isAdmin, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { playSound } = useSound();
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
@@ -43,6 +45,7 @@ export default function AdminTopics() {
       return res.json();
     },
     onSuccess: () => {
+      playSound("success");
       queryClient.invalidateQueries({ queryKey: ["/api/admin/topics"] });
       queryClient.invalidateQueries({ queryKey: ["/api/topics"] });
       setIsAddOpen(false);
@@ -50,6 +53,7 @@ export default function AdminTopics() {
       toast({ title: "تم إضافة الموضوع بنجاح" });
     },
     onError: () => {
+      playSound("error");
       toast({ title: "فشل إضافة الموضوع", variant: "destructive" });
     },
   });
@@ -61,12 +65,14 @@ export default function AdminTopics() {
       return res.json();
     },
     onSuccess: () => {
+      playSound("success");
       queryClient.invalidateQueries({ queryKey: ["/api/admin/topics"] });
       queryClient.invalidateQueries({ queryKey: ["/api/topics"] });
       setEditingTopic(null);
       toast({ title: "تم تحديث الموضوع بنجاح" });
     },
     onError: () => {
+      playSound("error");
       toast({ title: "فشل تحديث الموضوع", variant: "destructive" });
     },
   });
@@ -77,11 +83,13 @@ export default function AdminTopics() {
       if (!res.ok) throw new Error("فشل حذف الموضوع");
     },
     onSuccess: () => {
+      playSound("success");
       queryClient.invalidateQueries({ queryKey: ["/api/admin/topics"] });
       queryClient.invalidateQueries({ queryKey: ["/api/topics"] });
       toast({ title: "تم حذف الموضوع" });
     },
     onError: () => {
+      playSound("error");
       toast({ title: "فشل حذف الموضوع", variant: "destructive" });
     },
   });

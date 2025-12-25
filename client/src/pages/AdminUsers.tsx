@@ -2,6 +2,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useSound } from "@/hooks/use-sound";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ export default function AdminUsers() {
   const { user, isAdmin, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { playSound } = useSound();
 
   const { data: users, isLoading: usersLoading } = useQuery<UserData[]>({
     queryKey: ["/api/admin/users"],
@@ -48,6 +50,7 @@ export default function AdminUsers() {
       return res.json();
     },
     onSuccess: (_, variables) => {
+      playSound("success");
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
@@ -56,6 +59,7 @@ export default function AdminUsers() {
       });
     },
     onError: () => {
+      playSound("error");
       toast({ title: "فشل تحديث الحالة", variant: "destructive" });
     },
   });
@@ -67,10 +71,12 @@ export default function AdminUsers() {
       return res.json();
     },
     onSuccess: () => {
+      playSound("success");
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({ title: "تم تحديث الصلاحية" });
     },
     onError: () => {
+      playSound("error");
       toast({ title: "فشل تحديث الصلاحية", variant: "destructive" });
     },
   });
@@ -84,12 +90,14 @@ export default function AdminUsers() {
       }
     },
     onSuccess: () => {
+      playSound("success");
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
       toast({ title: "تم حذف المستخدم" });
     },
     onError: (error: Error) => {
+      playSound("error");
       toast({ title: error.message || "فشل حذف المستخدم", variant: "destructive" });
     },
   });

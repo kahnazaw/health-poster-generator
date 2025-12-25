@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, FileText, Calendar, Building2 } from "lucide-react";
+import { useSound } from "@/hooks/use-sound";
 import logoUrl from "@/assets/logo.png";
 
 interface ArchivedPoster {
@@ -25,6 +26,7 @@ interface ArchivedPoster {
 export default function Archive() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+  const { playSound } = useSound();
 
   const { data: posters, isLoading } = useQuery<ArchivedPoster[]>({
     queryKey: ["/api/posters/archive"],
@@ -53,7 +55,7 @@ export default function Archive() {
             
             <Button 
               variant="outline" 
-              onClick={() => setLocation("/")}
+              onClick={() => { playSound("click"); setLocation("/"); }}
               data-testid="button-back-home"
             >
               <ArrowRight className="w-4 h-4 ml-2" />
