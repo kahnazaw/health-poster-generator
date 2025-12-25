@@ -177,9 +177,16 @@ The image should be suitable for a health awareness poster. No text in the image
 
       const element = posterRef.current;
       
-      // Store original transform and temporarily remove scale for high-quality capture
+      // Store original styles
       const originalTransform = element.style.transform;
+      const originalPosition = element.style.position;
+      const originalLeft = element.style.left;
+      
+      // Temporarily modify for capture
       element.style.transform = 'none';
+      
+      // Wait for fonts to be ready
+      await document.fonts.ready;
       
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -187,12 +194,14 @@ The image should be suitable for a health awareness poster. No text in the image
         allowTaint: true,
         logging: false,
         backgroundColor: "#ffffff",
-        width: element.scrollWidth,
-        height: element.scrollHeight,
+        foreignObjectRendering: true,
+        removeContainer: true,
       });
       
-      // Restore original transform
+      // Restore original styles
       element.style.transform = originalTransform;
+      element.style.position = originalPosition;
+      element.style.left = originalLeft;
 
       const imgData = canvas.toDataURL("image/png", 1.0);
       
@@ -236,9 +245,16 @@ The image should be suitable for a health awareness poster. No text in the image
 
       const element = posterRef.current;
       
-      // Store original transform and temporarily remove scale for high-quality capture
+      // Store original styles
       const originalTransform = element.style.transform;
+      const originalPosition = element.style.position;
+      const originalLeft = element.style.left;
+      
+      // Temporarily modify for capture
       element.style.transform = 'none';
+
+      // Wait for fonts to be ready
+      await document.fonts.ready;
 
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -246,12 +262,14 @@ The image should be suitable for a health awareness poster. No text in the image
         allowTaint: true,
         logging: false,
         backgroundColor: "#ffffff",
-        width: element.scrollWidth,
-        height: element.scrollHeight,
+        foreignObjectRendering: true,
+        removeContainer: true,
       });
       
-      // Restore original transform
+      // Restore original styles
       element.style.transform = originalTransform;
+      element.style.position = originalPosition;
+      element.style.left = originalLeft;
 
       const link = document.createElement("a");
       link.download = `poster-${Date.now()}.png`;
