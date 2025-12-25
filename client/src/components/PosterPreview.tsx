@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Building2 } from "lucide-react";
-import logoUrl from "@/assets/logo.png";
+import ministryLogoUrl from "@/assets/ministry-logo.png";
 
 interface PosterPreviewProps {
   orientation: "portrait" | "landscape";
@@ -37,8 +37,8 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
           
           <header className="relative z-10 px-12 py-8 flex justify-between items-start border-b-4 border-primary/20">
             <div className="flex items-start gap-4">
-              <div className="w-24 h-24 bg-white border-2 border-slate-100 rounded-full shadow-sm flex items-center justify-center overflow-hidden p-2">
-                <img src={logoUrl} alt="شعار وزارة الصحة العراقية" className="w-full h-full object-contain" />
+              <div className="w-24 h-24 bg-white border-2 border-slate-100 rounded-lg shadow-sm flex items-center justify-center overflow-hidden p-1">
+                <img src={ministryLogoUrl} alt="شعار وزارة الصحة العراقية" className="w-full h-full object-contain" />
               </div>
               <div className="flex flex-col gap-1">
                 <h2 className="text-xl font-bold text-primary">
