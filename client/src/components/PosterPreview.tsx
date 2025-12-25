@@ -28,7 +28,7 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
     const isPortrait = orientation === "portrait";
     
     return (
-      <div className="flex items-center justify-center p-2 sm:p-4 bg-slate-100/50 rounded-xl overflow-auto min-h-[400px] sm:min-h-[500px] md:min-h-[600px] w-full">
+      <div className="flex items-start justify-center p-2 sm:p-4 bg-slate-100/50 rounded-xl overflow-y-auto overflow-x-hidden w-full" style={{ maxHeight: 'calc(100vh - 200px)', minHeight: '300px' }}>
         <motion.div
           ref={ref}
           id="poster-preview"
@@ -37,13 +37,14 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
           className={`
-            relative bg-white shadow-2xl overflow-hidden
+            relative bg-white shadow-2xl overflow-hidden flex-shrink-0
             ${isPortrait ? "w-[210mm] h-[297mm]" : "w-[297mm] h-[210mm]"}
-            origin-top transform scale-[0.22] xs:scale-[0.28] sm:scale-[0.38] md:scale-[0.48] lg:scale-[0.58] xl:scale-[0.65]
+            origin-top transform scale-[0.18] xs:scale-[0.22] sm:scale-[0.35] md:scale-[0.45] lg:scale-[0.55] xl:scale-[0.65]
             flex flex-col text-slate-800
           `}
           style={{
             aspectRatio: isPortrait ? "210/297" : "297/210",
+            marginBottom: isPortrait ? '-450px' : '-300px',
           }}
         >
           <div 
