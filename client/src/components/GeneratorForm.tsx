@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Download, LayoutTemplate, FileText, UserCircle, Sparkles, Image, Palette } from "lucide-react";
+import { Loader2, Download, LayoutTemplate, FileText, UserCircle, Sparkles, Image, Palette, FileImage } from "lucide-react";
 import type { ColorTheme } from "@/pages/Home";
 
 interface ApprovedTopic {
@@ -14,6 +14,7 @@ interface GeneratorFormProps {
   onGenerate: (data: { topicId: number; centerName: string }) => void;
   onOrientationChange: (orientation: "portrait" | "landscape") => void;
   onDownload: () => void;
+  onDownloadImage?: () => void;
   onGenerateImage?: () => void;
   orientation: "portrait" | "landscape";
   isGenerating: boolean;
@@ -27,12 +28,14 @@ interface GeneratorFormProps {
   selectedTheme?: ColorTheme;
   onThemeChange?: (theme: ColorTheme) => void;
   colorThemes?: ColorTheme[];
+  language?: "ar" | "en";
 }
 
 export function GeneratorForm({
   onGenerate,
   onOrientationChange,
   onDownload,
+  onDownloadImage,
   onGenerateImage,
   orientation,
   isGenerating,
@@ -46,7 +49,9 @@ export function GeneratorForm({
   selectedTheme,
   onThemeChange,
   colorThemes,
+  language = "ar",
 }: GeneratorFormProps) {
+  const t = (ar: string, en: string) => language === "ar" ? ar : en;
   const { data: topics, isLoading: topicsLoading } = useQuery<ApprovedTopic[]>({
     queryKey: ["/api/topics"],
   });
@@ -244,20 +249,38 @@ export function GeneratorForm({
           )}
 
           {hasContent && (
-            <button
-              type="button"
-              onClick={onDownload}
-              className="
-                w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg shadow-amber-500/25
-                bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600
-                hover:shadow-xl hover:shadow-amber-500/30 hover:-translate-y-0.5 active:translate-y-0
-                flex items-center justify-center gap-3 transition-all duration-200
-              "
-              data-testid="button-download"
-            >
-              <Download className="w-5 h-5" />
-              تحميل PDF
-            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={onDownload}
+                className="
+                  py-3.5 rounded-xl font-bold text-white shadow-lg shadow-amber-500/25
+                  bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600
+                  hover:shadow-xl hover:shadow-amber-500/30 hover:-translate-y-0.5 active:translate-y-0
+                  flex items-center justify-center gap-2 transition-all duration-200
+                "
+                data-testid="button-download-pdf"
+              >
+                <Download className="w-5 h-5" />
+                {t("PDF", "PDF")}
+              </button>
+              {onDownloadImage && (
+                <button
+                  type="button"
+                  onClick={onDownloadImage}
+                  className="
+                    py-3.5 rounded-xl font-bold text-white shadow-lg shadow-blue-500/25
+                    bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600
+                    hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 active:translate-y-0
+                    flex items-center justify-center gap-2 transition-all duration-200
+                  "
+                  data-testid="button-download-image"
+                >
+                  <FileImage className="w-5 h-5" />
+                  {t("صورة", "Image")}
+                </button>
+              )}
+            </div>
           )}
         </div>
       </form>
