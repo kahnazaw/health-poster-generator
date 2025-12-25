@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Download, LayoutTemplate, FileText, UserCircle, Sparkles, Image, Palette, FileImage } from "lucide-react";
-import type { ColorTheme } from "@/pages/Home";
+import { Loader2, Download, LayoutTemplate, FileText, UserCircle, Sparkles, Image, Palette, FileImage, QrCode, Layout } from "lucide-react";
+import type { ColorTheme, PosterTemplate } from "@/pages/Home";
 
 interface ApprovedTopic {
   id: number;
@@ -16,11 +16,13 @@ interface GeneratorFormProps {
   onDownload: () => void;
   onDownloadImage?: () => void;
   onGenerateImage?: () => void;
+  onGenerateQrCode?: () => void;
   orientation: "portrait" | "landscape";
   isGenerating: boolean;
   isGeneratingImage?: boolean;
   hasContent: boolean;
   hasImage?: boolean;
+  showQrCode?: boolean;
   selectedTopicId: number | null;
   onTopicChange: (topicId: number) => void;
   centerName: string;
@@ -28,6 +30,9 @@ interface GeneratorFormProps {
   selectedTheme?: ColorTheme;
   onThemeChange?: (theme: ColorTheme) => void;
   colorThemes?: ColorTheme[];
+  selectedTemplate?: PosterTemplate;
+  onTemplateChange?: (template: PosterTemplate) => void;
+  posterTemplates?: PosterTemplate[];
   language?: "ar" | "en";
 }
 
@@ -37,11 +42,13 @@ export function GeneratorForm({
   onDownload,
   onDownloadImage,
   onGenerateImage,
+  onGenerateQrCode,
   orientation,
   isGenerating,
   isGeneratingImage,
   hasContent,
   hasImage,
+  showQrCode,
   selectedTopicId,
   onTopicChange,
   centerName,
@@ -49,6 +56,9 @@ export function GeneratorForm({
   selectedTheme,
   onThemeChange,
   colorThemes,
+  selectedTemplate,
+  onTemplateChange,
+  posterTemplates,
   language = "ar",
 }: GeneratorFormProps) {
   const t = (ar: string, en: string) => language === "ar" ? ar : en;
@@ -155,6 +165,43 @@ export function GeneratorForm({
           </div>
         )}
 
+        {posterTemplates && selectedTemplate && onTemplateChange && (
+          <div className="space-y-3">
+            <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
+                <Layout className="w-3.5 h-3.5 text-white" />
+              </div>
+              قالب التصميم
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {posterTemplates.map((template) => (
+                <button
+                  key={template.id}
+                  type="button"
+                  onClick={() => onTemplateChange(template)}
+                  className={`
+                    relative p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2
+                    ${selectedTemplate.id === template.id 
+                      ? "border-cyan-500 bg-cyan-50 shadow-lg" 
+                      : "border-slate-100 hover:border-slate-200 hover:shadow-md"}
+                  `}
+                  data-testid={`button-template-${template.id}`}
+                >
+                  <span className="text-sm font-medium text-slate-700">{template.name}</span>
+                  <span className="text-[10px] text-slate-500 text-center leading-tight">{template.description}</span>
+                  {selectedTemplate.id === template.id && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-cyan-500 rounded-full flex items-center justify-center">
+                      <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-3">
           <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
@@ -245,6 +292,25 @@ export function GeneratorForm({
                   {hasImage ? "توليد صورة جديدة" : "إضافة صورة بالذكاء الاصطناعي"}
                 </>
               )}
+            </button>
+          )}
+
+          {hasContent && onGenerateQrCode && (
+            <button
+              type="button"
+              onClick={onGenerateQrCode}
+              className={`
+                w-full py-3 rounded-xl font-bold text-white shadow-lg
+                ${showQrCode 
+                  ? "bg-gradient-to-r from-green-500 to-emerald-500 shadow-green-500/25" 
+                  : "bg-gradient-to-r from-slate-600 to-slate-700 shadow-slate-500/25 hover:from-slate-700 hover:to-slate-800"}
+                hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0
+                flex items-center justify-center gap-3 transition-all duration-200
+              `}
+              data-testid="button-generate-qr"
+            >
+              <QrCode className="w-5 h-5" />
+              {showQrCode ? "تم إضافة رمز QR" : "إضافة رمز QR"}
             </button>
           )}
 

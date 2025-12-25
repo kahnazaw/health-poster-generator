@@ -35,8 +35,13 @@ export const approvedTopics = pgTable("approved_topics", {
   id: serial("id").primaryKey(),
   slug: text("slug").notNull().unique(),
   title: text("title").notNull(),
+  titleEn: text("title_en"),
+  titleKu: text("title_ku"),
   points: jsonb("points").notNull().$type<string[]>(),
+  pointsEn: jsonb("points_en").$type<string[]>(),
+  pointsKu: jsonb("points_ku").$type<string[]>(),
   isActive: boolean("is_active").default(true),
+  scheduleDate: text("schedule_date"),
 });
 
 export const userPosters = pgTable("user_posters", {
