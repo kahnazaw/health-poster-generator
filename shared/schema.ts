@@ -1,18 +1,31 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, jsonb, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+export const posters = pgTable("posters", {
+  id: serial("id").primaryKey(),
+  topic: text("topic").notNull(),
+  centerName: text("center_name").notNull(),
+  orientation: text("orientation").notNull(), // 'portrait' | 'landscape'
+  content: jsonb("content").notNull(), // { title: string, points: string[] }
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertPosterSchema = createInsertSchema(posters).omit({ 
+  id: true, 
+  createdAt: true 
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export type Poster = typeof posters.$inferSelect;
+export type InsertPoster = z.infer<typeof insertPosterSchema>;
+
+export type GeneratePosterRequest = {
+  topic: string;
+  centerName: string;
+  orientation: "portrait" | "landscape";
+};
+
+export type GeneratePosterResponse = {
+  title: string;
+  points: string[];
+};
