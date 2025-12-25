@@ -39,6 +39,9 @@ export async function registerRoutes(
   
   const PgSession = connectPgSimple(session);
   
+  // Trust proxy for Replit deployment
+  app.set("trust proxy", 1);
+  
   app.use(session({
     store: new PgSession({
       pool: pool,
@@ -51,6 +54,7 @@ export async function registerRoutes(
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     },
   }));
