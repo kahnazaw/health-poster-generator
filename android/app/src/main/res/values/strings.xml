@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">منصة التوعية الصحية</string>
+    <string name="title_activity_main">منصة التوعية الصحية</string>
+    <string name="package_name">iq.gov.health.kirkuk.poster</string>
+    <string name="custom_url_scheme">iq.gov.health.kirkuk.poster</string>
+</resources>
