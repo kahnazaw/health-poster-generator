@@ -385,6 +385,24 @@ export async function registerRoutes(
         return res.status(400).json({ message: "HTML and format are required" });
       }
 
+      // Add Google Fonts for Arabic text rendering
+      const fontsAndStyles = `
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+        <style>
+          * { box-sizing: border-box; }
+          body { 
+            margin: 0; 
+            padding: 0;
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            direction: rtl;
+          }
+          .font-display, h1, h2, h3, h4 { font-family: 'Cairo', 'Tajawal', sans-serif; }
+        </style>
+      `;
+      
+      // Inject fonts into HTML
+      const enhancedHtml = html.replace('</head>', `${fontsAndStyles}</head>`);
+
       const chromiumPath = process.env.CHROMIUM_PATH || '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium';
       const browser = await puppeteer.launch({
         headless: true,
@@ -394,7 +412,8 @@ export async function registerRoutes(
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
           '--disable-gpu',
-          '--single-process'
+          '--single-process',
+          '--font-render-hinting=none'
         ]
       });
 
@@ -407,12 +426,12 @@ export async function registerRoutes(
       await page.setViewport({ width, height, deviceScaleFactor: 2 });
 
       // Use data URL to properly pass HTML with encoding
-      const dataUrl = "data:text/html;charset=utf-8," + encodeURIComponent(html);
-      await page.goto(dataUrl, { waitUntil: 'networkidle0' });
+      const dataUrl = "data:text/html;charset=utf-8," + encodeURIComponent(enhancedHtml);
+      await page.goto(dataUrl, { waitUntil: 'networkidle0', timeout: 30000 });
       
-      // Wait for rendering
-      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => r(undefined))));
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Wait for fonts to load
+      await page.evaluate(() => document.fonts.ready);
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       if (format === 'pdf') {
         const pdfBuffer = await page.pdf({
