@@ -204,7 +204,21 @@ The image should be suitable for a health awareness poster. No text in the image
         })
         .join('\n');
 
-      const fullHtml = `<style>${styles}</style>${posterHtml}`;
+      const fullHtml = `
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<style>
+${styles}
+body { margin: 0; }
+</style>
+</head>
+<body>
+${posterHtml}
+</body>
+</html>
+`;
 
       const response = await fetch('/api/export-poster', {
         method: 'POST',
@@ -223,52 +237,15 @@ The image should be suitable for a health awareness poster. No text in the image
 
       const blob = await response.blob();
       const filename = `poster-${Date.now()}.pdf`;
-
       const url = URL.createObjectURL(blob);
-      
-      if (isMobileDevice()) {
-        if (navigator.share && navigator.canShare) {
-          const file = new File([blob], filename, { type: 'application/pdf' });
-          if (navigator.canShare({ files: [file] })) {
-            try {
-              await navigator.share({
-                files: [file],
-                title: t("بوستر صحي", "Health Poster"),
-              });
-              playSound("success");
-              toast({
-                title: t("تم بنجاح", "Success"),
-                description: t("اختر 'حفظ في الملفات' من القائمة.", "Choose 'Save to Files' from the menu."),
-              });
-              URL.revokeObjectURL(url);
-              return;
-            } catch (shareError) {
-              if ((shareError as Error).name === 'AbortError') {
-                URL.revokeObjectURL(url);
-                return;
-              }
-            }
-          }
-        }
-        
-        window.open(url, '_blank');
-        playSound("success");
-        toast({
-          title: t("تم فتح الملف", "File Opened"),
-          description: t("اضغط على زر التحميل في المتصفح لحفظ الملف.", "Tap the download button in browser to save."),
-        });
-        setTimeout(() => URL.revokeObjectURL(url), 30000);
-        return;
-      }
-      
+
       const link = document.createElement('a');
       link.href = url;
       link.download = filename;
-      link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      URL.revokeObjectURL(url);
       
       playSound("success");
       toast({
@@ -308,7 +285,21 @@ The image should be suitable for a health awareness poster. No text in the image
         })
         .join('\n');
 
-      const fullHtml = `<style>${styles}</style>${posterHtml}`;
+      const fullHtml = `
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<style>
+${styles}
+body { margin: 0; }
+</style>
+</head>
+<body>
+${posterHtml}
+</body>
+</html>
+`;
 
       const response = await fetch('/api/export-poster', {
         method: 'POST',
@@ -327,52 +318,15 @@ The image should be suitable for a health awareness poster. No text in the image
 
       const blob = await response.blob();
       const filename = `poster-${Date.now()}.png`;
-
       const url = URL.createObjectURL(blob);
-      
-      if (isMobileDevice()) {
-        if (navigator.share && navigator.canShare) {
-          const file = new File([blob], filename, { type: 'image/png' });
-          if (navigator.canShare({ files: [file] })) {
-            try {
-              await navigator.share({
-                files: [file],
-                title: t("بوستر صحي", "Health Poster"),
-              });
-              playSound("success");
-              toast({
-                title: t("تم بنجاح", "Success"),
-                description: t("اختر 'حفظ الصورة' من القائمة.", "Choose 'Save Image' from the menu."),
-              });
-              URL.revokeObjectURL(url);
-              return;
-            } catch (shareError) {
-              if ((shareError as Error).name === 'AbortError') {
-                URL.revokeObjectURL(url);
-                return;
-              }
-            }
-          }
-        }
-        
-        window.open(url, '_blank');
-        playSound("success");
-        toast({
-          title: t("تم فتح الصورة", "Image Opened"),
-          description: t("اضغط مطولاً على الصورة واختر 'حفظ الصورة'.", "Long press the image and choose 'Save Image'."),
-        });
-        setTimeout(() => URL.revokeObjectURL(url), 30000);
-        return;
-      }
-      
+
       const link = document.createElement('a');
       link.href = url;
       link.download = filename;
-      link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      URL.revokeObjectURL(url);
       
       playSound("success");
       toast({

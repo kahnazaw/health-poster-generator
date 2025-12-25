@@ -394,7 +394,6 @@ export async function registerRoutes(
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
           '--disable-gpu',
-          '--font-render-hinting=none',
           '--single-process'
         ]
       });
@@ -407,40 +406,11 @@ export async function registerRoutes(
       
       await page.setViewport({ width, height, deviceScaleFactor: 2 });
 
-      // Add Arabic font support and RTL direction
-      const fullHtml = `
-        <!DOCTYPE html>
-        <html dir="rtl" lang="ar">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-          <style>
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            html, body {
-              direction: rtl;
-              font-family: 'Cairo', 'Tajawal', sans-serif;
-              width: ${width}px;
-              height: ${height}px;
-              overflow: hidden;
-            }
-          </style>
-        </head>
-        <body>
-          ${html}
-        </body>
-        </html>
-      `;
-
-      await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
+      // Set content directly - client sends full HTML document
+      await page.setContent(html, { waitUntil: 'networkidle0' });
       
       // Wait for fonts to load
-      await page.evaluate(() => document.fonts.ready);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await page.waitForFunction(() => document.fonts.status === 'loaded');
 
       if (format === 'pdf') {
         const pdfBuffer = await page.pdf({
@@ -453,7 +423,6 @@ export async function registerRoutes(
         await browser.close();
         
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'attachment; filename=poster.pdf');
         res.send(pdfBuffer);
       } else {
         const pngBuffer = await page.screenshot({
@@ -464,7 +433,6 @@ export async function registerRoutes(
         await browser.close();
         
         res.setHeader('Content-Type', 'image/png');
-        res.setHeader('Content-Disposition', 'attachment; filename=poster.png');
         res.send(pngBuffer);
       }
     } catch (error) {
