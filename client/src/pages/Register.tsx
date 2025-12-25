@@ -12,6 +12,7 @@ import logoUrl from "@/assets/logo.png";
 export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [healthCenter, setHealthCenter] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +44,7 @@ export default function Register() {
     setIsLoading(true);
     
     try {
-      const res = await apiRequest("POST", "/api/auth/register", { name, email, password });
+      const res = await apiRequest("POST", "/api/auth/register", { name, email, healthCenter, password });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.message || "فشل التسجيل");
@@ -115,6 +116,18 @@ export default function Register() {
                 placeholder="example@health.gov.iq"
                 required
                 data-testid="input-email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="healthCenter">اسم المركز الصحي</Label>
+              <Input
+                id="healthCenter"
+                type="text"
+                value={healthCenter}
+                onChange={(e) => setHealthCenter(e.target.value)}
+                placeholder="مثال: مركز صحي الحويجة"
+                required
+                data-testid="input-health-center"
               />
             </div>
             <div className="space-y-2">

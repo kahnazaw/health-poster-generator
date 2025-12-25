@@ -36,6 +36,7 @@ export interface IStorage {
     postersByCenter: { centerName: string; count: number }[];
     postersByDate: { date: string; count: number }[];
     recentActivity: { name: string; topic: string; date: string }[];
+    userStats: { name: string; healthCenter: string; posterCount: number }[];
   }>;
 }
 
@@ -46,6 +47,7 @@ export class DatabaseStorage implements IStorage {
       name: data.name,
       email: data.email,
       passwordHash,
+      healthCenter: data.healthCenter,
     }).returning();
     return user;
   }
@@ -171,12 +173,15 @@ export class DatabaseStorage implements IStorage {
     postersByCenter: { centerName: string; count: number }[];
     postersByDate: { date: string; count: number }[];
     recentActivity: { name: string; topic: string; date: string }[];
+    userStats: { name: string; healthCenter: string; posterCount: number }[];
   }> {
     const allPosters = await this.getAllPosters();
+    const allUsers = await this.getAllUsers();
     
     const topicCounts: Record<string, number> = {};
     const centerCounts: Record<string, number> = {};
     const dateCounts: Record<string, number> = {};
+    const userPosterCounts: Record<number, number> = {};
     
     for (const poster of allPosters) {
       const topicTitle = poster.topic.title;
@@ -187,6 +192,8 @@ export class DatabaseStorage implements IStorage {
       
       const date = new Date(poster.createdAt!).toISOString().split('T')[0];
       dateCounts[date] = (dateCounts[date] || 0) + 1;
+      
+      userPosterCounts[poster.userId] = (userPosterCounts[poster.userId] || 0) + 1;
     }
     
     const postersByTopic = Object.entries(topicCounts)
@@ -210,11 +217,21 @@ export class DatabaseStorage implements IStorage {
       date: new Date(p.createdAt!).toLocaleDateString('ar-IQ'),
     }));
     
+    const userStats = allUsers
+      .filter(u => u.role !== 'admin')
+      .map(u => ({
+        name: u.name,
+        healthCenter: u.healthCenter || 'غير محدد',
+        posterCount: userPosterCounts[u.id] || 0,
+      }))
+      .sort((a, b) => b.posterCount - a.posterCount);
+    
     return {
       postersByTopic,
       postersByCenter,
       postersByDate,
       recentActivity,
+      userStats,
     };
   }
 }
