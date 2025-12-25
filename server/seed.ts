@@ -1,5 +1,6 @@
 import { db } from "./db";
-import { approvedTopics } from "@shared/schema";
+import { approvedTopics, users } from "@shared/schema";
+import bcrypt from "bcryptjs";
 
 const ministryApprovedTopics = [
   {
@@ -134,6 +135,21 @@ export async function seedTopics() {
     } catch (error) {
       console.log(`Topic already exists: ${topic.title}`);
     }
+  }
+  
+  // Create default admin user if not exists
+  try {
+    const passwordHash = await bcrypt.hash("admin123", 10);
+    await db.insert(users).values({
+      name: "مدير النظام",
+      email: "admin@kirkuk.health",
+      passwordHash,
+      role: "admin",
+      status: "approved",
+    }).onConflictDoNothing();
+    console.log("Admin user created: admin@kirkuk.health");
+  } catch (error) {
+    console.log("Admin user already exists");
   }
   
   console.log("Seeding completed!");
