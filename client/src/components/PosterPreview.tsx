@@ -53,7 +53,7 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
           <header className="relative z-10 px-10 py-6 flex justify-between items-start">
             <div className="flex flex-col gap-1 text-white drop-shadow-md">
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full p-1.5 flex items-center justify-center shadow-lg">
+                <div className="w-20 h-20 bg-white rounded-full p-2 flex items-center justify-center shadow-xl border-4 border-amber-400">
                   <img src={ministryLogoUrl} alt="شعار وزارة الصحة" className="w-full h-full object-contain" />
                 </div>
                 <div>
