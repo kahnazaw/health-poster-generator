@@ -170,52 +170,50 @@ The image should be suitable for a health awareness poster. No text in the image
     if (!posterRef.current) return;
 
     try {
+      playSound("click");
       toast({
         title: "جاري التحضير...",
         description: "يتم الآن تجهيز ملف PDF للتحميل.",
       });
 
-      const element = posterRef.current;
+      // Get the poster HTML content
+      const posterHtml = posterRef.current.outerHTML;
       
-      // Store original styles
-      const originalTransform = element.style.transform;
-      const originalPosition = element.style.position;
-      const originalLeft = element.style.left;
-      
-      // Temporarily modify for capture
-      element.style.transform = 'none';
-      
-      // Wait for fonts to be ready
-      await document.fonts.ready;
-      
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        foreignObjectRendering: true,
-        removeContainer: true,
-      });
-      
-      // Restore original styles
-      element.style.transform = originalTransform;
-      element.style.position = originalPosition;
-      element.style.left = originalLeft;
+      // Get computed styles from the document
+      const styles = Array.from(document.styleSheets)
+        .map(sheet => {
+          try {
+            return Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
+          } catch {
+            return '';
+          }
+        })
+        .join('\n');
 
-      const imgData = canvas.toDataURL("image/png", 1.0);
-      
-      const pdf = new jsPDF({
-        orientation: orientation,
-        unit: "mm",
-        format: "a4"
+      const fullHtml = `<style>${styles}</style>${posterHtml}`;
+
+      const response = await fetch('/api/export-poster', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          html: fullHtml,
+          format: 'pdf',
+          orientation: orientation
+        }),
+        credentials: 'include'
       });
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
 
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`poster-${Date.now()}.pdf`);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `poster-${Date.now()}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
 
       playSound("success");
       toast({
@@ -243,38 +241,44 @@ The image should be suitable for a health awareness poster. No text in the image
         description: t("يتم الآن تجهيز الصورة للتحميل.", "Preparing image for download."),
       });
 
-      const element = posterRef.current;
+      // Get the poster HTML content
+      const posterHtml = posterRef.current.outerHTML;
       
-      // Store original styles
-      const originalTransform = element.style.transform;
-      const originalPosition = element.style.position;
-      const originalLeft = element.style.left;
-      
-      // Temporarily modify for capture
-      element.style.transform = 'none';
+      // Get computed styles from the document
+      const styles = Array.from(document.styleSheets)
+        .map(sheet => {
+          try {
+            return Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
+          } catch {
+            return '';
+          }
+        })
+        .join('\n');
 
-      // Wait for fonts to be ready
-      await document.fonts.ready;
+      const fullHtml = `<style>${styles}</style>${posterHtml}`;
 
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        foreignObjectRendering: true,
-        removeContainer: true,
+      const response = await fetch('/api/export-poster', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          html: fullHtml,
+          format: 'png',
+          orientation: orientation
+        }),
+        credentials: 'include'
       });
-      
-      // Restore original styles
-      element.style.transform = originalTransform;
-      element.style.position = originalPosition;
-      element.style.left = originalLeft;
 
-      const link = document.createElement("a");
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
       link.download = `poster-${Date.now()}.png`;
-      link.href = canvas.toDataURL("image/png", 1.0);
       link.click();
+      URL.revokeObjectURL(url);
 
       playSound("success");
       toast({
