@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useSound } from "@/hooks/use-sound";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { apiRequest } from "@/lib/queryClient";
 import { CheckCircle } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
@@ -70,11 +71,14 @@ export default function Register() {
 
   if (isRegistered) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4" dir="rtl">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
+        <div className="absolute top-4 left-4">
+          <ThemeToggle />
+        </div>
         <Card className="w-full max-w-md">
           <CardContent className="pt-8 text-center">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
             </div>
             <h2 className="text-2xl font-bold mb-2">تم إنشاء الحساب بنجاح</h2>
             <p className="text-muted-foreground mb-6">
@@ -90,7 +94,10 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4" dir="rtl">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
+      <div className="absolute top-4 left-4">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto w-24 h-24 mb-4">

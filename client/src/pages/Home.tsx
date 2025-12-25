@@ -5,6 +5,7 @@ import { GeneratorForm } from "@/components/GeneratorForm";
 import { PosterPreview } from "@/components/PosterPreview";
 import { DailyHealthTip } from "@/components/DailyHealthTip";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useSound } from "@/hooks/use-sound";
@@ -12,7 +13,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { LogOut, Archive, User, Settings, Share2, MessageCircle, Send, Sparkles, Heart, Image, FileDown } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { LogOut, Archive, User, Settings, Share2, MessageCircle, Send, Sparkles, Heart, Image, FileDown, Maximize2, Printer, X } from "lucide-react";
 import { SiWhatsapp, SiTelegram } from "react-icons/si";
 import logoUrl from "@/assets/logo.png";
 import ministryLogoUrl from "@/assets/ministry-logo.png";
@@ -56,7 +58,9 @@ export default function Home() {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<ColorTheme>(colorThemes[0]);
+  const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false);
   const posterRef = useRef<HTMLDivElement>(null);
+  const printPreviewRef = useRef<HTMLDivElement>(null);
   
   const { user, logout, isLoading: authLoading, isAdmin } = useAuth();
   const [, setLocation] = useLocation();
@@ -415,6 +419,7 @@ ${cloneHtml}
             </div>
             
             <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
+              <ThemeToggle />
               <LanguageToggle />
               {user ? (
                 <>
@@ -531,28 +536,45 @@ ${cloneHtml}
               />
 
               {posterContent && (
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 p-5 shadow-lg shadow-slate-200/30">
-                  <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                    <Share2 className="w-4 h-4 text-teal-500" />
-                    مشاركة البوستر
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => handleShare("whatsapp")}
-                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-medium shadow-lg shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5 transition-all"
-                      data-testid="button-share-whatsapp"
+                <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-5 shadow-lg shadow-slate-200/30 dark:shadow-slate-900/30 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+                      <Maximize2 className="w-4 h-4 text-teal-500" />
+                      معاينة قبل الطباعة
+                    </h3>
+                    <Button
+                      onClick={() => setIsPrintPreviewOpen(true)}
+                      className="w-full bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white"
+                      data-testid="button-print-preview"
                     >
-                      <SiWhatsapp className="w-5 h-5" />
-                      واتساب
-                    </button>
-                    <button
-                      onClick={() => handleShare("telegram")}
-                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all"
-                      data-testid="button-share-telegram"
-                    >
-                      <SiTelegram className="w-5 h-5" />
-                      تيليجرام
-                    </button>
+                      <Printer className="w-4 h-4 ml-2" />
+                      فتح معاينة الحجم الكامل
+                    </Button>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+                      <Share2 className="w-4 h-4 text-teal-500" />
+                      مشاركة البوستر
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => handleShare("whatsapp")}
+                        className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-medium shadow-lg shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5 transition-all"
+                        data-testid="button-share-whatsapp"
+                      >
+                        <SiWhatsapp className="w-5 h-5" />
+                        واتساب
+                      </button>
+                      <button
+                        onClick={() => handleShare("telegram")}
+                        className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all"
+                        data-testid="button-share-telegram"
+                      >
+                        <SiTelegram className="w-5 h-5" />
+                        تيليجرام
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -623,6 +645,65 @@ ${cloneHtml}
           </div>
         </div>
       </footer>
+
+      <Dialog open={isPrintPreviewOpen} onOpenChange={setIsPrintPreviewOpen}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] w-auto h-auto p-0 overflow-hidden bg-slate-100 dark:bg-slate-900">
+          <DialogHeader className="p-4 border-b bg-white dark:bg-slate-800 flex flex-row items-center justify-between gap-4">
+            <DialogTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">
+              معاينة البوستر بالحجم الكامل
+            </DialogTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={handleDownload}
+                className="bg-gradient-to-r from-teal-500 to-teal-600"
+                data-testid="button-print-download-pdf"
+              >
+                <FileDown className="w-4 h-4 ml-2" />
+                تحميل PDF
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleDownloadImage}
+                data-testid="button-print-download-png"
+              >
+                <Image className="w-4 h-4 ml-2" />
+                تحميل PNG
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => window.print()}
+                data-testid="button-print-native"
+              >
+                <Printer className="w-4 h-4 ml-2" />
+                طباعة
+              </Button>
+            </div>
+          </DialogHeader>
+          <div className="overflow-auto p-4 flex items-center justify-center min-h-[60vh]">
+            <div 
+              ref={printPreviewRef}
+              className="shadow-2xl"
+              style={{
+                transform: 'scale(0.6)',
+                transformOrigin: 'center center'
+              }}
+            >
+              <PosterPreview
+                orientation={orientation}
+                centerName={centerName}
+                generatedContent={posterContent}
+                isLoading={false}
+                generatedImage={generatedImage}
+                theme={selectedTheme}
+                isPrintMode={true}
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

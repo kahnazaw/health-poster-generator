@@ -2,6 +2,24 @@ import { pgTable, text, serial, jsonb, timestamp, integer, boolean } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export const healthTips = pgTable("health_tips", {
+  id: serial("id").primaryKey(),
+  textAr: text("text_ar").notNull(),
+  textEn: text("text_en"),
+  icon: text("icon"),
+  isActive: boolean("is_active").default(true),
+});
+
+export const adminNotifications = pgTable("admin_notifications", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  relatedId: integer("related_id"),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -69,6 +87,7 @@ export type CreatePosterRequest = {
   topicId: number;
   centerName: string;
   orientation: "portrait" | "landscape";
+  colorTheme?: string;
 };
 
 export type PosterContent = {
@@ -76,3 +95,6 @@ export type PosterContent = {
   points: string[];
   topicId: number;
 };
+
+export type HealthTip = typeof healthTips.$inferSelect;
+export type AdminNotification = typeof adminNotifications.$inferSelect;

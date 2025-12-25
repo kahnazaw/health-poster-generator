@@ -73,6 +73,14 @@ export async function registerRoutes(
       
       const user = await storage.createUser(data);
       
+      // Create notification for admin
+      await storage.createNotification({
+        type: "new_user",
+        title: "طلب تسجيل جديد",
+        message: `المستخدم ${user.name} من ${data.healthCenter} يطلب الموافقة على حسابه`,
+        relatedId: user.id,
+      });
+      
       res.json({ 
         id: user.id, 
         name: user.name, 
@@ -371,6 +379,52 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Get analytics error:", error);
       res.status(500).json({ message: "فشل جلب التحليلات" });
+    }
+  });
+
+  // Health Tips API
+  app.get("/api/health-tips/today", async (req, res) => {
+    try {
+      const tip = await storage.getDailyHealthTip();
+      res.json(tip);
+    } catch (error) {
+      console.error("Get daily tip error:", error);
+      res.status(500).json({ message: "فشل جلب نصيحة اليوم" });
+    }
+  });
+
+  // Admin Notifications API
+  app.get("/api/admin/notifications", requireAdmin, async (req, res) => {
+    try {
+      const notifications = await storage.getUnreadNotifications();
+      res.json(notifications);
+    } catch (error) {
+      console.error("Get notifications error:", error);
+      res.status(500).json({ message: "فشل جلب الإشعارات" });
+    }
+  });
+
+  app.patch("/api/admin/notifications/:id/read", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.markNotificationRead(id);
+      res.json({ message: "تم تحديث الإشعار" });
+    } catch (error) {
+      console.error("Mark notification read error:", error);
+      res.status(500).json({ message: "فشل تحديث الإشعار" });
+    }
+  });
+
+  // Monthly Reports API
+  app.get("/api/admin/reports/monthly", requireAdmin, async (req, res) => {
+    try {
+      const year = parseInt(req.query.year as string) || new Date().getFullYear();
+      const month = parseInt(req.query.month as string) || new Date().getMonth() + 1;
+      const report = await storage.getMonthlyReport(year, month);
+      res.json(report);
+    } catch (error) {
+      console.error("Get monthly report error:", error);
+      res.status(500).json({ message: "فشل جلب التقرير الشهري" });
     }
   });
 
