@@ -5,11 +5,11 @@
 @tailwind utilities;
 
 :root {
-  /* Health Dept Blue-Green Palette */
-  --primary: 199 89% 48%; /* #0EA5E9 Sky Blue */
+  /* Vibrant Health Palette - Teal & Gold */
+  --primary: 173 80% 40%; /* Vibrant Teal */
   --primary-foreground: 210 40% 98%;
   
-  --secondary: 160 84% 39%; /* #10B981 Emerald Green */
+  --secondary: 38 92% 50%; /* Rich Gold/Amber */
   --secondary-foreground: 210 40% 98%;
 
   --background: 210 40% 98%;
