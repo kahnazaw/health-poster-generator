@@ -1,11 +1,12 @@
 import { db } from "./db";
 import { 
-  users, approvedTopics, userPosters,
+  users, approvedTopics, userPosters, healthTips, adminNotifications,
   type User, type InsertUser, 
   type ApprovedTopic, type InsertApprovedTopic,
-  type UserPoster, type InsertUserPoster 
+  type UserPoster, type InsertUserPoster,
+  type HealthTip, type AdminNotification
 } from "@shared/schema";
-import { eq, sql, desc } from "drizzle-orm";
+import { eq, sql, desc, and, gte } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -37,6 +38,19 @@ export interface IStorage {
     postersByDate: { date: string; count: number }[];
     recentActivity: { name: string; topic: string; date: string }[];
     userStats: { name: string; healthCenter: string; posterCount: number }[];
+  }>;
+  
+  getDailyHealthTip(): Promise<HealthTip | null>;
+  getAllHealthTips(): Promise<HealthTip[]>;
+  
+  createNotification(data: { type: string; title: string; message: string; relatedId?: number }): Promise<AdminNotification>;
+  getUnreadNotifications(): Promise<AdminNotification[]>;
+  markNotificationRead(id: number): Promise<void>;
+  getMonthlyReport(year: number, month: number): Promise<{
+    totalPosters: number;
+    newUsers: number;
+    topTopics: { title: string; count: number }[];
+    topCenters: { name: string; count: number }[];
   }>;
 }
 
@@ -232,6 +246,85 @@ export class DatabaseStorage implements IStorage {
       postersByDate,
       recentActivity,
       userStats,
+    };
+  }
+
+  async getDailyHealthTip(): Promise<HealthTip | null> {
+    const tips = await db.select().from(healthTips).where(eq(healthTips.isActive, true));
+    if (tips.length === 0) return null;
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+    const tipIndex = dayOfYear % tips.length;
+    return tips[tipIndex];
+  }
+
+  async getAllHealthTips(): Promise<HealthTip[]> {
+    return await db.select().from(healthTips).orderBy(desc(healthTips.id));
+  }
+
+  async createNotification(data: { type: string; title: string; message: string; relatedId?: number }): Promise<AdminNotification> {
+    const [notification] = await db.insert(adminNotifications).values({
+      type: data.type,
+      title: data.title,
+      message: data.message,
+      relatedId: data.relatedId,
+    }).returning();
+    return notification;
+  }
+
+  async getUnreadNotifications(): Promise<AdminNotification[]> {
+    return await db.select().from(adminNotifications)
+      .where(eq(adminNotifications.isRead, false))
+      .orderBy(desc(adminNotifications.createdAt));
+  }
+
+  async markNotificationRead(id: number): Promise<void> {
+    await db.update(adminNotifications).set({ isRead: true }).where(eq(adminNotifications.id, id));
+  }
+
+  async getMonthlyReport(year: number, month: number): Promise<{
+    totalPosters: number;
+    newUsers: number;
+    topTopics: { title: string; count: number }[];
+    topCenters: { name: string; count: number }[];
+  }> {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59);
+
+    const postersThisMonth = await db.select().from(userPosters)
+      .where(and(
+        gte(userPosters.createdAt, startDate),
+        sql`${userPosters.createdAt} <= ${endDate}`
+      ));
+    
+    const usersThisMonth = await db.select().from(users)
+      .where(and(
+        gte(users.createdAt, startDate),
+        sql`${users.createdAt} <= ${endDate}`
+      ));
+
+    const allTopics = await db.select().from(approvedTopics);
+    const topicMap = new Map(allTopics.map(t => [t.id, t.title]));
+
+    const topicCounts: Record<string, number> = {};
+    const centerCounts: Record<string, number> = {};
+    
+    for (const poster of postersThisMonth) {
+      const topicTitle = topicMap.get(poster.topicId) || 'غير معروف';
+      topicCounts[topicTitle] = (topicCounts[topicTitle] || 0) + 1;
+      centerCounts[poster.centerName] = (centerCounts[poster.centerName] || 0) + 1;
+    }
+
+    return {
+      totalPosters: postersThisMonth.length,
+      newUsers: usersThisMonth.length,
+      topTopics: Object.entries(topicCounts)
+        .map(([title, count]) => ({ title, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5),
+      topCenters: Object.entries(centerCounts)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5),
     };
   }
 }

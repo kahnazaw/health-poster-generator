@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useSound } from "@/hooks/use-sound";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import logoUrl from "@/assets/logo.png";
 
 export default function Login() {
@@ -41,7 +42,10 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4" dir="rtl">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
+      <div className="absolute top-4 left-4">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto w-24 h-24 mb-4">

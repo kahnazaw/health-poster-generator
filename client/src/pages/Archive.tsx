@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, FileText, Calendar, Building2 } from "lucide-react";
 import { useSound } from "@/hooks/use-sound";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import logoUrl from "@/assets/logo.png";
 
 interface ArchivedPoster {
@@ -39,8 +40,8 @@ export default function Archive() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50" dir="rtl">
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div className="min-h-screen bg-background" dir="rtl">
+      <nav className="bg-card border-b border-border sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center gap-4">
             <div className="flex items-center gap-3">
@@ -48,19 +49,22 @@ export default function Archive() {
                 <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-slate-900">الأرشيف الخاص</h1>
-                <p className="text-xs text-slate-500">البوسترات المُنشأة سابقاً</p>
+                <h1 className="text-lg font-bold text-foreground">الأرشيف الخاص</h1>
+                <p className="text-xs text-muted-foreground">البوسترات المُنشأة سابقاً</p>
               </div>
             </div>
             
-            <Button 
-              variant="outline" 
-              onClick={() => { playSound("click"); setLocation("/"); }}
-              data-testid="button-back-home"
-            >
-              <ArrowRight className="w-4 h-4 ml-2" />
-              العودة للرئيسية
-            </Button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button 
+                variant="outline" 
+                onClick={() => { playSound("click"); setLocation("/"); }}
+                data-testid="button-back-home"
+              >
+                <ArrowRight className="w-4 h-4 ml-2" />
+                العودة للرئيسية
+              </Button>
+            </div>
           </div>
         </div>
       </nav>

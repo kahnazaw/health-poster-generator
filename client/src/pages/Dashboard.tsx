@@ -1,12 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useSound } from "@/hooks/use-sound";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, FileText, Image, ArrowRight, TrendingUp, Clock, BarChart3, Activity, Building2 } from "lucide-react";
+import { Users, FileText, Image, ArrowRight, TrendingUp, Clock, BarChart3, Activity, Building2, Bell, Check, UserPlus, Calendar } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import logoUrl from "@/assets/logo.png";
 
 interface Stats {
@@ -30,6 +32,23 @@ interface PendingUser {
   createdAt: string;
 }
 
+interface AdminNotification {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  relatedId?: number;
+  createdAt: string;
+}
+
+interface MonthlyReport {
+  totalPosters: number;
+  newUsers: number;
+  topTopics: { title: string; count: number }[];
+  topCenters: { name: string; count: number }[];
+}
+
 const COLORS = ['#0d9488', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f43f5e', '#6366f1'];
 
 export default function Dashboard() {
@@ -50,6 +69,28 @@ export default function Dashboard() {
   const { data: pendingUsers } = useQuery<PendingUser[]>({
     queryKey: ["/api/admin/pending-users"],
     enabled: isAdmin,
+  });
+
+  const { data: notifications } = useQuery<AdminNotification[]>({
+    queryKey: ["/api/admin/notifications"],
+    enabled: isAdmin,
+  });
+
+  const { data: monthlyReport } = useQuery<MonthlyReport>({
+    queryKey: ["/api/admin/reports/monthly"],
+    enabled: isAdmin,
+  });
+
+  const markReadMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest("PATCH", `/api/admin/notifications/${id}/read`);
+      if (!res.ok) throw new Error("فشل تحديث الإشعار");
+      return res.json();
+    },
+    onSuccess: () => {
+      playSound("success");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/notifications"] });
+    },
   });
 
   if (isLoading) {
@@ -90,15 +131,18 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <Button 
-              variant="outline" 
-              onClick={() => { playSound("click"); setLocation("/"); }}
-              className="border-slate-200"
-              data-testid="button-back-home"
-            >
-              <ArrowRight className="w-4 h-4 ml-2" />
-              العودة للرئيسية
-            </Button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button 
+                variant="outline" 
+                onClick={() => { playSound("click"); setLocation("/"); }}
+                className="border-slate-200"
+                data-testid="button-back-home"
+              >
+                <ArrowRight className="w-4 h-4 ml-2" />
+                العودة للرئيسية
+              </Button>
+            </div>
           </div>
         </div>
       </nav>
@@ -417,10 +461,128 @@ export default function Dashboard() {
           </Card>
         )}
 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <Card className="bg-white/80 backdrop-blur-sm border-slate-200/50 shadow-lg shadow-slate-200/30 dark:bg-slate-800/80 dark:border-slate-700/50">
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
+              <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <Bell className="w-5 h-5 text-amber-500" />
+                الإشعارات
+                {notifications && notifications.length > 0 && (
+                  <Badge variant="destructive" className="text-xs">{notifications.length}</Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {notifications && notifications.length > 0 ? (
+                <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                  {notifications.map((notif) => (
+                    <div 
+                      key={notif.id} 
+                      className="flex items-start justify-between gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700"
+                      data-testid={`notification-item-${notif.id}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center flex-shrink-0">
+                          <UserPlus className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-800 dark:text-slate-200">{notif.title}</p>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">{notif.message}</p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            {new Date(notif.createdAt).toLocaleDateString('ar-IQ')}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => markReadMutation.mutate(notif.id)}
+                        disabled={markReadMutation.isPending}
+                        className="flex-shrink-0"
+                        data-testid={`button-mark-read-${notif.id}`}
+                      >
+                        <Check className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-slate-400 dark:text-slate-500">
+                  <div className="text-center">
+                    <Bell className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>لا توجد إشعارات جديدة</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border-slate-200/50 shadow-lg shadow-slate-200/30 dark:bg-slate-800/80 dark:border-slate-700/50">
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
+              <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-purple-500" />
+                التقرير الشهري
+              </CardTitle>
+              <Badge variant="secondary">
+                {new Date().toLocaleDateString('ar-IQ', { month: 'long', year: 'numeric' })}
+              </Badge>
+            </CardHeader>
+            <CardContent>
+              {monthlyReport ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700">
+                      <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{monthlyReport.totalPosters}</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">بوستر هذا الشهر</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-700">
+                      <p className="text-3xl font-bold text-teal-600 dark:text-teal-400">{monthlyReport.newUsers}</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">مستخدم جديد</p>
+                    </div>
+                  </div>
+                  
+                  {monthlyReport.topTopics.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">أكثر المواضيع استخداماً</p>
+                      <div className="flex flex-wrap gap-2">
+                        {monthlyReport.topTopics.slice(0, 3).map((topic, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {topic.title} ({topic.count})
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {monthlyReport.topCenters.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">أنشط المراكز الصحية</p>
+                      <div className="flex flex-wrap gap-2">
+                        {monthlyReport.topCenters.slice(0, 3).map((center, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {center.name} ({center.count})
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-slate-400 dark:text-slate-500">
+                  <div className="text-center">
+                    <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>لا توجد بيانات لهذا الشهر</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
         {analytics?.recentActivity && analytics.recentActivity.length > 0 && (
-          <Card className="bg-white/80 backdrop-blur-sm border-slate-200/50 shadow-lg shadow-slate-200/30">
+          <Card className="bg-white/80 backdrop-blur-sm border-slate-200/50 shadow-lg shadow-slate-200/30 dark:bg-slate-800/80 dark:border-slate-700/50">
             <CardHeader>
-              <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                 <Clock className="w-5 h-5 text-teal-500" />
                 آخر النشاطات
               </CardTitle>
@@ -430,7 +592,7 @@ export default function Dashboard() {
                 {analytics.recentActivity.map((activity, idx) => (
                   <div 
                     key={idx} 
-                    className="flex items-center justify-between p-3 rounded-xl bg-slate-50/80 border border-slate-100"
+                    className="flex items-center justify-between p-3 rounded-xl bg-slate-50/80 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-600"
                     data-testid={`activity-item-${idx}`}
                   >
                     <div className="flex items-center gap-3">
@@ -438,8 +600,8 @@ export default function Dashboard() {
                         {activity.name.charAt(0)}
                       </div>
                       <div>
-                        <p className="font-medium text-slate-800">{activity.name}</p>
-                        <p className="text-sm text-slate-500">{activity.topic}</p>
+                        <p className="font-medium text-slate-800 dark:text-slate-200">{activity.name}</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{activity.topic}</p>
                       </div>
                     </div>
                     <span className="text-sm text-slate-400">{activity.date}</span>
