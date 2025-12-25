@@ -1,0 +1,154 @@
+1️⃣ هيكل المشروع النهائي (React + TypeScript + Tailwind + Firebase)
+health-dashboard/
+│
+├── src/
+│   ├── components/
+│   │   ├── PrivateRoute.tsx
+│   │   ├── Navbar.tsx
+│   │   ├── Sidebar.tsx
+│   │   └── PDFGenerator.tsx
+│   │
+│   ├── pages/
+│   │   ├── Login.tsx
+│   │   ├── Dashboard.tsx
+│   │   ├── Topics.tsx
+│   │   ├── Templates.tsx
+│   │   ├── Users.tsx
+│   │   └── Archive.tsx
+│   │
+│   ├── firebase.ts
+│   ├── App.tsx
+│   └── index.tsx
+│
+├── public/
+│   └── logos/ (شعار الدائرة)
+│
+├── tailwind.config.js
+└── package.json
+
+2️⃣ إعداد Firebase (firebase.ts)
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+
+const firebaseConfig = {
+  apiKey: "API_KEY_HERE",
+  authDomain: "PROJECT_ID.firebaseapp.com",
+  projectId: "PROJECT_ID",
+  storageBucket: "PROJECT_ID.appspot.com",
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+export const auth = getAuth(app);
+
+
+يمكنك استخدام Firebase لحفظ المستخدمين، المواضيع، الأرشيف.
+
+3️⃣ توليد PDF للبوسترات (PDFGenerator.tsx)
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+
+interface Props {
+  title: string;
+  content: string[];
+  centerName: string;
+}
+
+const PDFGenerator = ({ title, content, centerName }: Props) => {
+  const generatePDF = async () => {
+    const input = document.getElementById('poster')!;
+    const canvas = await html2canvas(input, { scale: 3 });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`${title}.pdf`);
+  }
+
+  return (
+    <div>
+      <div id="poster" className="w-[210mm] h-[297mm] bg-white p-8">
+        <img src="/logos/logo.png" alt="شعار الدائرة" className="h-16 mb-4" />
+        <h1 className="text-3xl font-bold mb-4">{title}</h1>
+        {content.map((c,i) => <p key={i} className="text-lg mb-2">{c}</p>)}
+        <div className="mt-8 border-t pt-4 text-sm text-gray-600">
+          {centerName} <br/>
+          دائرة صحة كركوك – قطاع كركوك الأول – وحدة تعزيز الصحة <br/>
+          برمجة وتصميم م. صيدلي علاء صالح أحمد <br/>
+          "هذه الرسالة أُعدّت وفق توجيهات وزارة الصحة العراقية"
+        </div>
+      </div>
+      <button onClick={generatePDF} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
+        تحميل PDF
+      </button>
+    </div>
+  )
+}
+
+export default PDFGenerator;
+
+4️⃣ صلاحيات المدير والمستخدم (PrivateRoute.tsx)
+import { Navigate } from 'react-router-dom';
+
+interface Props {
+  children: JSX.Element;
+  adminOnly?: boolean;
+}
+
+const PrivateRoute = ({ children, adminOnly = false }: Props) => {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  if (!user?.loggedIn) return <Navigate to="/login" />;
+  if (adminOnly && user.role !== 'admin') return <Navigate to="/" />;
+  return children;
+}
+
+export default PrivateRoute;
+
+
+adminOnly=true للأقسام: Topics – Templates – Users
+
+5️⃣ التصميم العصري والتفاعلي
+
+Tailwind + Framer Motion لكل القوائم والبطاقات
+
+Dashboard: بطاقات إحصائيات قابلة للتحريك عند Hover
+
+Sidebar: قوائم منسدلة مع تأثيرات smooth
+
+Modal للتأكيد قبل حذف موضوع أو مستخدم
+
+6️⃣ تحويل Web إلى Android
+
+تثبيت Capacitor:
+
+npm install @capacitor/core @capacitor/cli
+npx cap init health-dashboard com.example.health
+npx cap add android
+npx cap copy
+npx cap open android
+
+
+أي تعديل على المشروع React يظهر مباشرة في التطبيق بعد npx cap copy
+
+7️⃣ المميزات النهائية
+
+واجهة عصريّة وجذابة
+
+صفحات: Dashboard – Topics – Templates – Users – Archive
+
+توليد PDF عالي الدقة للبوسترات
+
+أرشيف لكل مستخدم
+
+مكتبة نصوص وزارة الصحة العراقية فقط
+
+صلاحيات مفصلة: مدير – مستخدم
+
+شعار رسمي وحقوقك محفوظة
+
+نسخة جاهزة للتحويل لتطبيق Android
