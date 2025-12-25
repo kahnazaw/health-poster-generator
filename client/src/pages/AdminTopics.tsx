@@ -23,7 +23,7 @@ interface Topic {
 }
 
 export default function AdminTopics() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
@@ -31,7 +31,7 @@ export default function AdminTopics() {
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
   const [newTopic, setNewTopic] = useState({ slug: "", title: "", points: "" });
 
-  const { data: topics, isLoading } = useQuery<Topic[]>({
+  const { data: topics, isLoading: topicsLoading } = useQuery<Topic[]>({
     queryKey: ["/api/admin/topics"],
     enabled: isAdmin,
   });
@@ -86,7 +86,20 @@ export default function AdminTopics() {
     },
   });
 
-  if (!user || !isAdmin) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center" dir="rtl">
+        <div className="animate-pulse text-slate-500">جاري التحميل...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    setLocation("/login");
+    return null;
+  }
+
+  if (!isAdmin) {
     setLocation("/");
     return null;
   }
@@ -189,7 +202,7 @@ export default function AdminTopics() {
           </Dialog>
         </div>
 
-        {isLoading ? (
+        {topicsLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i} className="animate-pulse">

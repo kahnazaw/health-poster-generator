@@ -13,13 +13,21 @@ interface Stats {
 }
 
 export default function Dashboard() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
-  const { data: stats, isLoading } = useQuery<Stats>({
+  const { data: stats, isLoading: statsLoading } = useQuery<Stats>({
     queryKey: ["/api/admin/stats"],
     enabled: isAdmin,
   });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center" dir="rtl">
+        <div className="animate-pulse text-slate-500">جاري التحميل...</div>
+      </div>
+    );
+  }
 
   if (!user) {
     setLocation("/login");
@@ -64,7 +72,7 @@ export default function Dashboard() {
           <p className="text-muted-foreground">إليك نظرة عامة على إحصائيات النظام</p>
         </div>
 
-        {isLoading ? (
+        {statsLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="animate-pulse">
