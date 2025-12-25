@@ -30,6 +30,8 @@ export default function Home() {
   const [posterContent, setPosterContent] = useState<PosterContent | null>(null);
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const [centerName, setCenterName] = useState("");
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const posterRef = useRef<HTMLDivElement>(null);
   
   const { user, logout, isLoading: authLoading, isAdmin } = useAuth();
@@ -88,6 +90,7 @@ export default function Home() {
 
   const handleTopicChange = (topicId: number) => {
     setSelectedTopicId(topicId);
+    setGeneratedImage(null);
     const topic = topics?.find(t => t.id === topicId);
     if (topic) {
       setPosterContent({
@@ -95,6 +98,44 @@ export default function Home() {
         points: topic.points,
         slug: topic.slug,
       });
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    if (!posterContent) return;
+    
+    setIsGeneratingImage(true);
+    try {
+      const prompt = `Create a simple, clean health infographic illustration for: "${posterContent.title}". 
+Style: Modern flat design, medical/health theme, simple icons, pastel colors, Arabic-friendly design.
+The image should be suitable for a health awareness poster. No text in the image.`;
+      
+      const res = await apiRequest("POST", "/api/generate-image", {
+        prompt,
+        size: "512x512"
+      });
+      
+      if (!res.ok) {
+        throw new Error("فشل توليد الصورة");
+      }
+      
+      const data = await res.json();
+      if (data.b64_json) {
+        setGeneratedImage(`data:image/png;base64,${data.b64_json}`);
+        toast({
+          title: "تم توليد الصورة",
+          description: "تمت إضافة صورة توضيحية للبوستر",
+        });
+      }
+    } catch (error) {
+      console.error("Image generation error:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل توليد الصورة التوضيحية",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingImage(false);
     }
   };
 
@@ -238,9 +279,12 @@ export default function Home() {
               onGenerate={handleGenerate}
               onOrientationChange={setOrientation}
               onDownload={handleDownload}
+              onGenerateImage={handleGenerateImage}
               orientation={orientation}
               isGenerating={generateMutation.isPending}
+              isGeneratingImage={isGeneratingImage}
               hasContent={!!posterContent}
+              hasImage={!!generatedImage}
               selectedTopicId={selectedTopicId}
               onTopicChange={handleTopicChange}
               centerName={centerName}
@@ -271,6 +315,7 @@ export default function Home() {
                   centerName={centerName}
                   generatedContent={posterContent}
                   isLoading={generateMutation.isPending}
+                  generatedImage={generatedImage}
                 />
               </div>
             </div>

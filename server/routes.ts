@@ -6,6 +6,7 @@ import session from "express-session";
 import { seedTopics } from "./seed";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
+import { registerImageRoutes } from "./replit_integrations/image";
 
 declare module "express-session" {
   interface SessionData {
@@ -357,6 +358,8 @@ export async function registerRoutes(
       res.status(500).json({ message: "فشل جلب البوسترات" });
     }
   });
+
+  registerImageRoutes(app);
 
   return httpServer;
 }
