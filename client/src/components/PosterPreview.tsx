@@ -28,7 +28,7 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
     const isPortrait = orientation === "portrait";
     
     return (
-      <div className="flex items-center justify-center p-4 bg-slate-100/50 rounded-xl overflow-auto min-h-[600px]">
+      <div className="flex items-center justify-center p-2 sm:p-4 bg-slate-100/50 rounded-xl overflow-auto min-h-[400px] sm:min-h-[500px] md:min-h-[600px] w-full">
         <motion.div
           ref={ref}
           id="poster-preview"
@@ -39,7 +39,7 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
           className={`
             relative bg-white shadow-2xl overflow-hidden
             ${isPortrait ? "w-[210mm] h-[297mm]" : "w-[297mm] h-[210mm]"}
-            origin-top transform scale-[0.35] sm:scale-[0.45] md:scale-[0.55] lg:scale-[0.65]
+            origin-top transform scale-[0.22] xs:scale-[0.28] sm:scale-[0.38] md:scale-[0.48] lg:scale-[0.58] xl:scale-[0.65]
             flex flex-col text-slate-800
           `}
           style={{

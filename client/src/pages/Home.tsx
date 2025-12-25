@@ -356,32 +356,32 @@ The image should be suitable for a health awareness poster. No text in the image
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-amber-50/30 font-sans" dir={dir}>
       <nav className="bg-white/80 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-20 items-center gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 p-0.5 shadow-lg shadow-teal-500/20">
-                  <div className="w-full h-full bg-white rounded-xl flex items-center justify-center p-1">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="flex justify-between h-16 sm:h-20 items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 p-0.5 shadow-lg shadow-teal-500/20">
+                  <div className="w-full h-full bg-white rounded-lg sm:rounded-xl flex items-center justify-center p-1">
                     <img src={logoUrl} alt={t("شعار دائرة صحة كركوك", "Kirkuk Health Department Logo")} className="w-full h-full object-contain" />
                   </div>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-white border border-slate-100 shadow-sm p-1">
+                <div className="hidden sm:block w-12 h-12 rounded-xl bg-white border border-slate-100 shadow-sm p-1">
                   <img src={ministryLogoUrl} alt={t("شعار وزارة الصحة", "Ministry of Health Logo")} className="w-full h-full object-contain" />
                 </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-teal-600 to-amber-600 bg-clip-text text-transparent font-display">
+              <div className="hidden xs:block">
+                <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-teal-600 to-amber-600 bg-clip-text text-transparent font-display">
                   {t("منصة التوعية الصحية", "Health Awareness Platform")}
                 </h1>
-                <p className="text-xs text-slate-500">{t("دائرة صحة كركوك - قطاع كركوك الأول", "Kirkuk Health Dept. - Sector 1")}</p>
+                <p className="text-[10px] sm:text-xs text-slate-500">{t("دائرة صحة كركوك - قطاع كركوك الأول", "Kirkuk Health Dept. - Sector 1")}</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
               <LanguageToggle />
               {user ? (
                 <>
-                  <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full text-sm text-slate-600">
+                  <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full text-sm text-slate-600">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-br from-teal-500 to-amber-500 flex items-center justify-center">
                       <User className="w-3.5 h-3.5 text-white" />
                     </div>
@@ -390,24 +390,44 @@ The image should be suitable for a health awareness poster. No text in the image
                   {isAdmin && (
                     <Button 
                       variant="default" 
+                      size="icon"
+                      onClick={() => setLocation("/dashboard")}
+                      className="sm:hidden bg-gradient-to-r from-teal-500 to-teal-600"
+                      data-testid="button-dashboard-mobile"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <Button 
+                      variant="default" 
                       size="sm"
                       onClick={() => setLocation("/dashboard")}
-                      className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 shadow-md shadow-teal-500/20"
+                      className="hidden sm:flex bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 shadow-md shadow-teal-500/20"
                       data-testid="button-dashboard"
                     >
                       <Settings className="w-4 h-4 ml-1" />
-                      لوحة التحكم
+                      <span className="hidden md:inline">لوحة التحكم</span>
                     </Button>
                   )}
                   <Button 
                     variant="outline" 
+                    size="icon"
+                    onClick={() => setLocation("/archive")}
+                    className="sm:hidden border-slate-200"
+                    data-testid="button-archive-mobile"
+                  >
+                    <Archive className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
                     size="sm"
                     onClick={() => setLocation("/archive")}
-                    className="border-slate-200"
+                    className="hidden sm:flex border-slate-200"
                     data-testid="button-archive"
                   >
                     <Archive className="w-4 h-4 ml-1" />
-                    الأرشيف
+                    <span className="hidden md:inline">الأرشيف</span>
                   </Button>
                   <Button 
                     variant="ghost" 
@@ -422,18 +442,23 @@ The image should be suitable for a health awareness poster. No text in the image
                 <>
                   <Button 
                     variant="ghost"
+                    size="sm"
                     onClick={() => setLocation("/login")}
                     data-testid="button-login"
+                    className="text-xs sm:text-sm"
                   >
-                    تسجيل الدخول
+                    <span className="hidden xs:inline">تسجيل الدخول</span>
+                    <span className="xs:hidden">دخول</span>
                   </Button>
                   <Button 
+                    size="sm"
                     onClick={() => setLocation("/register")}
-                    className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 shadow-md shadow-teal-500/20"
+                    className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 shadow-md shadow-teal-500/20 text-xs sm:text-sm"
                     data-testid="button-register"
                   >
-                    <Sparkles className="w-4 h-4 ml-1" />
-                    إنشاء حساب
+                    <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
+                    <span className="hidden xs:inline">إنشاء حساب</span>
+                    <span className="xs:hidden">حساب</span>
                   </Button>
                 </>
               )}
@@ -514,8 +539,8 @@ The image should be suitable for a health awareness poster. No text in the image
           <div className="lg:col-span-8 space-y-6">
             <DailyHealthTip />
             
-            <div className="bg-white/60 backdrop-blur-sm rounded-3xl border border-slate-200/50 shadow-xl shadow-slate-200/40 p-2">
-              <div className="bg-gradient-to-br from-slate-100 to-slate-50 rounded-2xl p-6 md:p-10 flex items-center justify-center min-h-[600px] lg:min-h-[800px] overflow-hidden relative">
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl sm:rounded-3xl border border-slate-200/50 shadow-xl shadow-slate-200/40 p-1 sm:p-2">
+              <div className="bg-gradient-to-br from-slate-100 to-slate-50 rounded-xl sm:rounded-2xl p-2 sm:p-6 md:p-10 flex items-center justify-center min-h-[350px] sm:min-h-[500px] md:min-h-[600px] lg:min-h-[800px] overflow-hidden relative">
                 
                 <div className="absolute inset-0 opacity-[0.02]" 
                   style={{
