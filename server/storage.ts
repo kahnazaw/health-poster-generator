@@ -14,7 +14,9 @@ export interface IStorage {
   getUserById(id: number): Promise<User | null>;
   validatePassword(email: string, password: string): Promise<User | null>;
   getAllUsers(): Promise<User[]>;
+  getPendingUsers(): Promise<User[]>;
   updateUserRole(id: number, role: string): Promise<User | null>;
+  updateUserStatus(id: number, status: string): Promise<User | null>;
   deleteUser(id: number): Promise<boolean>;
   
   getApprovedTopics(): Promise<ApprovedTopic[]>;
@@ -63,8 +65,17 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 
+  async getPendingUsers(): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.status, "pending")).orderBy(desc(users.createdAt));
+  }
+
   async updateUserRole(id: number, role: string): Promise<User | null> {
     const [user] = await db.update(users).set({ role }).where(eq(users.id, id)).returning();
+    return user || null;
+  }
+
+  async updateUserStatus(id: number, status: string): Promise<User | null> {
+    const [user] = await db.update(users).set({ status }).where(eq(users.id, id)).returning();
     return user || null;
   }
 

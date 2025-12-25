@@ -3,7 +3,8 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, FileText, Image, ArrowRight, TrendingUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Users, FileText, Image, ArrowRight, TrendingUp, Clock } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 
 interface Stats {
@@ -12,12 +13,24 @@ interface Stats {
   posters: number;
 }
 
+interface PendingUser {
+  id: number;
+  name: string;
+  email: string;
+  createdAt: string;
+}
+
 export default function Dashboard() {
   const { user, isAdmin, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
   const { data: stats, isLoading: statsLoading } = useQuery<Stats>({
     queryKey: ["/api/admin/stats"],
+    enabled: isAdmin,
+  });
+
+  const { data: pendingUsers } = useQuery<PendingUser[]>({
+    queryKey: ["/api/admin/pending-users"],
     enabled: isAdmin,
   });
 
@@ -148,10 +161,20 @@ export default function Dashboard() {
           </Card>
 
           <Card 
-            className="hover-elevate cursor-pointer" 
+            className="hover-elevate cursor-pointer relative" 
             onClick={() => setLocation("/admin/users")}
             data-testid="card-manage-users"
           >
+            {pendingUsers && pendingUsers.length > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute top-2 left-2"
+                data-testid="badge-pending-count"
+              >
+                <Clock className="w-3 h-3 ml-1" />
+                {pendingUsers.length} طلب جديد
+              </Badge>
+            )}
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">

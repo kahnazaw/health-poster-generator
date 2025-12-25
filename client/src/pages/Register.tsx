@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { CheckCircle } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 
 export default function Register() {
@@ -14,7 +15,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
+  const [isRegistered, setIsRegistered] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -42,9 +43,12 @@ export default function Register() {
     setIsLoading(true);
     
     try {
-      await register(name, email, password);
-      toast({ title: "تم إنشاء الحساب بنجاح" });
-      setLocation("/");
+      const res = await apiRequest("POST", "/api/auth/register", { name, email, password });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "فشل التسجيل");
+      }
+      setIsRegistered(true);
     } catch (error: any) {
       toast({ 
         title: "فشل التسجيل", 
@@ -55,6 +59,27 @@ export default function Register() {
       setIsLoading(false);
     }
   };
+
+  if (isRegistered) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4" dir="rtl">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-8 text-center">
+            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">تم إنشاء الحساب بنجاح</h2>
+            <p className="text-muted-foreground mb-6">
+              حسابك قيد المراجعة. سيتم إعلامك عند موافقة المدير على طلبك.
+            </p>
+            <Button onClick={() => setLocation("/login")} data-testid="button-go-login">
+              العودة لتسجيل الدخول
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4" dir="rtl">
