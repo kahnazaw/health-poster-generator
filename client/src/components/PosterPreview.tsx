@@ -13,6 +13,8 @@ interface PosterPreviewProps {
   generatedImage?: string | null;
   theme?: ColorTheme;
   isPrintMode?: boolean;
+  template?: "modern" | "classic" | "minimal";
+  qrCodeData?: string | null;
 }
 
 const defaultTheme: ColorTheme = {
@@ -25,7 +27,7 @@ const defaultTheme: ColorTheme = {
 };
 
 export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
-  ({ orientation, centerName, generatedContent, isLoading, generatedImage, theme = defaultTheme, isPrintMode = false }, ref) => {
+  ({ orientation, centerName, generatedContent, isLoading, generatedImage, theme = defaultTheme, isPrintMode = false, template = "modern", qrCodeData }, ref) => {
     const isPortrait = orientation === "portrait";
     
     const posterWidthPx = isPortrait ? 794 : 1122;
@@ -177,6 +179,20 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
               <span className="font-bold text-lg">{centerName || "المركز الصحي"}</span>
               <span className="text-sm opacity-80">قطاع كركوك الأول - وحدة تعزيز الصحة</span>
             </div>
+            
+            {qrCodeData && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src={qrCodeData} 
+                  alt="رمز QR" 
+                  className="w-20 h-20 rounded-lg shadow-lg"
+                  style={{ border: `2px solid ${theme.primary}` }}
+                  crossOrigin="anonymous"
+                />
+                <span className="text-xs mt-1 opacity-70" style={{ color: theme.primary }}>امسح للمزيد</span>
+              </div>
+            )}
+            
             <div className="flex flex-col items-end" style={{ color: theme.primary }}>
               <span className="font-semibold">برمجة وتصميم: م. صيدلي علاء صالح أحمد</span>
               <div className="flex gap-4 text-sm mt-1" style={{ color: theme.secondary }}>

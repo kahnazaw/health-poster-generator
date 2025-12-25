@@ -14,7 +14,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { LogOut, Archive, User, Settings, Share2, MessageCircle, Send, Sparkles, Heart, Image, FileDown, Maximize2, Printer, X } from "lucide-react";
+import { LogOut, Archive, User, Settings, Share2, MessageCircle, Send, Sparkles, Heart, Image, FileDown, Maximize2, Printer, X, QrCode, Layout, BarChart3 } from "lucide-react";
 import { SiWhatsapp, SiTelegram } from "react-icons/si";
 import logoUrl from "@/assets/logo.png";
 import ministryLogoUrl from "@/assets/ministry-logo.png";
@@ -50,6 +50,18 @@ export const colorThemes: ColorTheme[] = [
   { id: "orange-yellow", name: "برتقالي أصفر", primary: "#ea580c", secondary: "#eab308", gradient: "from-orange-500 to-yellow-500", bg: "#fff7ed" },
 ];
 
+export type PosterTemplate = {
+  id: string;
+  name: string;
+  description: string;
+};
+
+export const posterTemplates: PosterTemplate[] = [
+  { id: "modern", name: "عصري", description: "تصميم حديث مع تدرجات وأشكال هندسية" },
+  { id: "classic", name: "كلاسيكي", description: "تصميم رسمي تقليدي" },
+  { id: "minimal", name: "بسيط", description: "تصميم نظيف وبسيط" },
+];
+
 export default function Home() {
   const [orientation, setOrientation] = useState<"portrait" | "landscape">("portrait");
   const [posterContent, setPosterContent] = useState<PosterContent | null>(null);
@@ -58,6 +70,9 @@ export default function Home() {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<ColorTheme>(colorThemes[0]);
+  const [selectedTemplate, setSelectedTemplate] = useState<PosterTemplate>(posterTemplates[0]);
+  const [showQrCode, setShowQrCode] = useState(false);
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
   const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false);
   const posterRef = useRef<HTMLDivElement>(null);
   const printPreviewRef = useRef<HTMLDivElement>(null);
@@ -166,6 +181,37 @@ The image should be suitable for a health awareness poster. No text in the image
       });
     } finally {
       setIsGeneratingImage(false);
+    }
+  };
+
+  const handleGenerateQrCode = async () => {
+    if (!posterContent) return;
+    
+    try {
+      const QRCode = (await import('qrcode')).default;
+      const url = `https://kirkuk.health/topic/${posterContent.slug || 'info'}`;
+      const qrDataUrl = await QRCode.toDataURL(url, {
+        width: 150,
+        margin: 1,
+        color: {
+          dark: selectedTheme.primary,
+          light: '#ffffff'
+        }
+      });
+      setQrCodeData(qrDataUrl);
+      setShowQrCode(true);
+      playSound("success");
+      toast({
+        title: "تم إنشاء رمز QR",
+        description: "تمت إضافة رمز QR للبوستر",
+      });
+    } catch (error) {
+      console.error("QR generation error:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل إنشاء رمز QR",
+        variant: "destructive",
+      });
     }
   };
 
@@ -520,11 +566,13 @@ ${cloneHtml}
                 onDownload={handleDownload}
                 onDownloadImage={handleDownloadImage}
                 onGenerateImage={handleGenerateImage}
+                onGenerateQrCode={handleGenerateQrCode}
                 orientation={orientation}
                 isGenerating={generateMutation.isPending}
                 isGeneratingImage={isGeneratingImage}
                 hasContent={!!posterContent}
                 hasImage={!!generatedImage}
+                showQrCode={showQrCode}
                 selectedTopicId={selectedTopicId}
                 onTopicChange={handleTopicChange}
                 centerName={centerName}
@@ -532,6 +580,9 @@ ${cloneHtml}
                 selectedTheme={selectedTheme}
                 onThemeChange={setSelectedTheme}
                 colorThemes={colorThemes}
+                selectedTemplate={selectedTemplate}
+                onTemplateChange={setSelectedTemplate}
+                posterTemplates={posterTemplates}
                 language={language}
               />
 
@@ -615,6 +666,8 @@ ${cloneHtml}
                   isLoading={generateMutation.isPending}
                   generatedImage={generatedImage}
                   theme={selectedTheme}
+                  template={selectedTemplate.id as "modern" | "classic" | "minimal"}
+                  qrCodeData={showQrCode ? qrCodeData : null}
                 />
               </div>
             </div>
@@ -699,6 +752,8 @@ ${cloneHtml}
                 generatedImage={generatedImage}
                 theme={selectedTheme}
                 isPrintMode={true}
+                template={selectedTemplate.id as "modern" | "classic" | "minimal"}
+                qrCodeData={showQrCode ? qrCodeData : null}
               />
             </div>
           </div>
