@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مولد ملصقات صحية</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    #poster {
+      width: 500px;
+      min-height: 700px;
+      border: 2px solid #333;
+      padding: 20px;
+      margin-top: 20px;
+      background-color: #f9f9f9;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    #poster img {
+      max-width: 100%;
+      margin-bottom: 20px;
+    }
+    textarea {
+      width: 500px;
+      height: 150px;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<h1>مولد الملصقات الصحية</h1>
+
+<textarea id="message" placeholder="اكتب رسالتك هنا..."></textarea>
+<button id="generateBtn">عرض الملصق</button>
+<button id="downloadBtn">تحميل PDF</button>
+
+<div id="poster" style="display:none;">
+  <h1>ملصق صحي</h1>
+  <p id="posterText"></p>
+</div>
+
+<script>
+  const messageInput = document.getElementById("message");
+  const poster = document.getElementById("poster");
+  const posterText = document.getElementById("posterText");
+
+  // عرض الملصق بالنص الذي كتبه المستخدم
+  document.getElementById("generateBtn").addEventListener("click", () => {
+    const text = messageInput.value.trim();
+    if(text === "") {
+      alert("الرجاء كتابة رسالة!");
+      return;
+    }
+    posterText.textContent = text;
+    poster.style.display = "block"; // إظهار الملصق
+  });
+
+  // تحميل الملصق كـ PDF
+  document.getElementById("downloadBtn").addEventListener("click", () => {
+    if(poster.style.display === "none") {
+      alert("الرجاء عرض الملصق أولاً!");
+      return;
+    }
+
+    const options = {
+      margin: 10,
+      filename: 'health-poster.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, logging: true, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(options).from(poster).save();
+  });
+</script>
+
+</body>
+</html>

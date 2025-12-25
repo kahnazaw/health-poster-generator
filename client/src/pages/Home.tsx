@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import html2pdf from "html2pdf.js";
 import { GeneratorForm } from "@/components/GeneratorForm";
 import { PosterPreview } from "@/components/PosterPreview";
 import { DailyHealthTip } from "@/components/DailyHealthTip";
@@ -193,80 +193,33 @@ The image should be suitable for a health awareness poster. No text in the image
         description: t("يتم الآن تجهيز ملف PDF للتحميل.", "Preparing PDF for download."),
       });
 
-      const posterHtml = posterRef.current.outerHTML;
-      
-      const styles = Array.from(document.styleSheets)
-        .map(sheet => {
-          try {
-            return Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
-          } catch {
-            return '';
-          }
-        })
-        .join('\n');
-
-      const fullHtml = `<style>${styles}</style>${posterHtml}`;
-
-      const response = await fetch('/api/export-poster', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          html: fullHtml,
-          format: 'pdf',
-          orientation: orientation
-        }),
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('Export failed');
-      }
-
-      const blob = await response.blob();
+      const element = posterRef.current;
       const filename = `poster-${Date.now()}.pdf`;
 
-      if (isMobileDevice() && navigator.share && navigator.canShare) {
-        const file = new File([blob], filename, { type: 'application/pdf' });
-        if (navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({
-              files: [file],
-              title: t("بوستر صحي", "Health Poster"),
-            });
-            toast({
-              title: t("تم المشاركة", "Shared"),
-              description: t("يمكنك حفظ الملف من قائمة المشاركة.", "You can save the file from the share menu."),
-            });
-          } catch (shareError) {
-            if ((shareError as Error).name !== 'AbortError') {
-              const url = URL.createObjectURL(blob);
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = filename;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              setTimeout(() => URL.revokeObjectURL(url), 1000);
-            }
-          }
+      const options = {
+        margin: 10,
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true,
+          allowTaint: true,
+          logging: false
+        },
+        jsPDF: { 
+          unit: 'mm', 
+          format: 'a4', 
+          orientation: orientation 
         }
-      } else {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        
-        toast({
-          title: t("تم التحميل", "Download Complete"),
-          description: t("تم حفظ ملف البوستر بنجاح.", "Poster file saved successfully."),
-        });
-      }
+      };
+
+      await html2pdf().set(options).from(element).save();
       
       playSound("success");
+      toast({
+        title: t("تم التحميل", "Download Complete"),
+        description: t("تم حفظ ملف البوستر بنجاح.", "Poster file saved successfully."),
+      });
     } catch (error) {
       console.error("PDF Generation Error:", error);
       playSound("error");
@@ -288,82 +241,56 @@ The image should be suitable for a health awareness poster. No text in the image
         description: t("يتم الآن تجهيز الصورة للتحميل.", "Preparing image for download."),
       });
 
-      // Get the poster HTML content
-      const posterHtml = posterRef.current.outerHTML;
-      
-      // Get computed styles from the document
-      const styles = Array.from(document.styleSheets)
-        .map(sheet => {
-          try {
-            return Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
-          } catch {
-            return '';
-          }
-        })
-        .join('\n');
-
-      const fullHtml = `<style>${styles}</style>${posterHtml}`;
-
-      const response = await fetch('/api/export-poster', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          html: fullHtml,
-          format: 'png',
-          orientation: orientation
-        }),
-        credentials: 'include'
+      const canvas = await html2canvas(posterRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: "#ffffff"
       });
 
-      if (!response.ok) {
-        throw new Error('Export failed');
-      }
-
-      const blob = await response.blob();
       const filename = `poster-${Date.now()}.png`;
 
-      if (isMobileDevice() && navigator.share && navigator.canShare) {
-        const file = new File([blob], filename, { type: 'image/png' });
-        if (navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({
-              files: [file],
-              title: t("بوستر صحي", "Health Poster"),
-            });
-            toast({
-              title: t("تم المشاركة", "Shared"),
-              description: t("يمكنك حفظ الصورة من قائمة المشاركة.", "You can save the image from the share menu."),
-            });
-          } catch (shareError) {
-            if ((shareError as Error).name !== 'AbortError') {
-              const url = URL.createObjectURL(blob);
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = filename;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              setTimeout(() => URL.revokeObjectURL(url), 1000);
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          throw new Error('Failed to create image');
+        }
+
+        if (isMobileDevice() && navigator.share && navigator.canShare) {
+          const file = new File([blob], filename, { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: t("بوستر صحي", "Health Poster"),
+              });
+              toast({
+                title: t("تم المشاركة", "Shared"),
+                description: t("يمكنك حفظ الصورة من قائمة المشاركة.", "You can save the image from the share menu."),
+              });
+            } catch (shareError) {
+              if ((shareError as Error).name !== 'AbortError') {
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png');
+                link.download = filename;
+                link.click();
+              }
             }
           }
+        } else {
+          const link = document.createElement('a');
+          link.href = canvas.toDataURL('image/png');
+          link.download = filename;
+          link.click();
+          
+          toast({
+            title: t("تم التحميل", "Download Complete"),
+            description: t("تم حفظ الصورة بنجاح.", "Image saved successfully."),
+          });
         }
-      } else {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        
-        toast({
-          title: t("تم التحميل", "Download Complete"),
-          description: t("تم حفظ الصورة بنجاح.", "Image saved successfully."),
-        });
-      }
 
-      playSound("success");
+        playSound("success");
+      }, 'image/png');
     } catch (error) {
       console.error("Image Download Error:", error);
       playSound("error");
