@@ -27,35 +27,40 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
   ({ orientation, centerName, generatedContent, isLoading, generatedImage, theme = defaultTheme }, ref) => {
     const isPortrait = orientation === "portrait";
     
-    // Scale factor for preview
-    const scale = 0.35;
-    const posterWidthMM = isPortrait ? 210 : 297;
-    const posterHeightMM = isPortrait ? 297 : 210;
+    // A4 dimensions in pixels at 96 DPI
+    const posterWidthPx = isPortrait ? 794 : 1122;
+    const posterHeightPx = isPortrait ? 1122 : 794;
+    const scale = 0.32;
     
     return (
       <div 
-        className="flex items-center justify-center p-4 bg-slate-100/50 rounded-xl w-full"
-        style={{ minHeight: '450px' }}
+        className="flex items-center justify-center p-4 bg-slate-100/50 rounded-xl w-full overflow-auto"
+        style={{ minHeight: '400px' }}
       >
         <div 
-          className="relative"
           style={{
-            width: posterWidthMM * scale + 'mm',
-            height: posterHeightMM * scale + 'mm',
+            width: posterWidthPx * scale,
+            height: posterHeightPx * scale,
+            position: 'relative',
+            flexShrink: 0,
           }}
         >
           <motion.div
             ref={ref}
             id="poster-preview"
             layout
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="absolute top-0 left-0 bg-white shadow-2xl overflow-hidden flex flex-col text-slate-800 origin-top-left"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="bg-white shadow-2xl overflow-hidden flex flex-col text-slate-800"
             style={{
-              width: posterWidthMM + 'mm',
-              height: posterHeightMM + 'mm',
+              width: posterWidthPx,
+              height: posterHeightPx,
               transform: `scale(${scale})`,
+              transformOrigin: 'top left',
+              position: 'absolute',
+              top: 0,
+              left: 0,
             }}
           >
             <div 
