@@ -7,6 +7,7 @@ import { seedTopics } from "./seed";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
 import { registerImageRoutes } from "./replit_integrations/image";
+import puppeteer from "puppeteer";
 
 declare module "express-session" {
   interface SessionData {
@@ -374,6 +375,100 @@ export async function registerRoutes(
   });
 
   registerImageRoutes(app);
+
+  // Server-side poster export using Puppeteer for proper Arabic RTL rendering
+  app.post("/api/export-poster", requireAuth, async (req, res) => {
+    try {
+      const { html, format, orientation } = req.body;
+      
+      if (!html || !format) {
+        return res.status(400).json({ message: "HTML and format are required" });
+      }
+
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--font-render-hinting=none'
+        ]
+      });
+
+      const page = await browser.newPage();
+      
+      // A4 dimensions in pixels at 96 DPI
+      const width = orientation === 'landscape' ? 1122 : 794;
+      const height = orientation === 'landscape' ? 794 : 1122;
+      
+      await page.setViewport({ width, height, deviceScaleFactor: 2 });
+
+      // Add Arabic font support and RTL direction
+      const fullHtml = `
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            html, body {
+              direction: rtl;
+              font-family: 'Cairo', 'Tajawal', sans-serif;
+              width: ${width}px;
+              height: ${height}px;
+              overflow: hidden;
+            }
+          </style>
+        </head>
+        <body>
+          ${html}
+        </body>
+        </html>
+      `;
+
+      await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
+      
+      // Wait for fonts to load
+      await page.evaluate(() => document.fonts.ready);
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      if (format === 'pdf') {
+        const pdfBuffer = await page.pdf({
+          format: 'A4',
+          landscape: orientation === 'landscape',
+          printBackground: true,
+          margin: { top: 0, right: 0, bottom: 0, left: 0 }
+        });
+        
+        await browser.close();
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=poster.pdf');
+        res.send(pdfBuffer);
+      } else {
+        const pngBuffer = await page.screenshot({
+          type: 'png',
+          fullPage: true
+        });
+        
+        await browser.close();
+        
+        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Content-Disposition', 'attachment; filename=poster.png');
+        res.send(pngBuffer);
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+      res.status(500).json({ message: "فشل تصدير البوستر" });
+    }
+  });
 
   return httpServer;
 }
