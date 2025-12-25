@@ -15,6 +15,7 @@ import logoUrl from "@/assets/logo.png";
 interface PosterContent {
   title: string;
   points: string[];
+  slug?: string;
 }
 
 interface ApprovedTopic {
@@ -52,7 +53,11 @@ export default function Home() {
       return res.json();
     },
     onSuccess: (data) => {
-      setPosterContent(data.content);
+      const topic = topics?.find(t => t.id === selectedTopicId);
+      setPosterContent({
+        ...data.content,
+        slug: topic?.slug,
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/posters/archive"] });
       toast({
         title: "تم التوليد بنجاح!",
@@ -88,6 +93,7 @@ export default function Home() {
       setPosterContent({
         title: topic.title,
         points: topic.points,
+        slug: topic.slug,
       });
     }
   };
