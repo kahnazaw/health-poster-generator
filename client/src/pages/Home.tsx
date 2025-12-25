@@ -4,12 +4,16 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { GeneratorForm } from "@/components/GeneratorForm";
 import { PosterPreview } from "@/components/PosterPreview";
+import { DailyHealthTip } from "@/components/DailyHealthTip";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useSound } from "@/hooks/use-sound";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { LogOut, Archive, User, Settings, Share2, MessageCircle, Send, Sparkles, Heart } from "lucide-react";
+import { LogOut, Archive, User, Settings, Share2, MessageCircle, Send, Sparkles, Heart, Image, FileDown } from "lucide-react";
 import { SiWhatsapp, SiTelegram } from "react-icons/si";
 import logoUrl from "@/assets/logo.png";
 import ministryLogoUrl from "@/assets/ministry-logo.png";
@@ -58,6 +62,8 @@ export default function Home() {
   const { user, logout, isLoading: authLoading, isAdmin } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { playSound } = useSound();
+  const { language, t, dir } = useLanguage();
 
   const { data: topics } = useQuery<ApprovedTopic[]>({
     queryKey: ["/api/topics"],
@@ -192,15 +198,55 @@ The image should be suitable for a health awareness poster. No text in the image
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       pdf.save(`poster-${Date.now()}.pdf`);
 
+      playSound("success");
       toast({
-        title: "تم التحميل",
-        description: "تم حفظ ملف البوستر بنجاح.",
+        title: t("تم التحميل", "Download Complete"),
+        description: t("تم حفظ ملف البوستر بنجاح.", "Poster file saved successfully."),
       });
     } catch (error) {
       console.error("PDF Generation Error:", error);
+      playSound("error");
       toast({
-        title: "فشل التحميل",
-        description: "تعذر إنشاء ملف PDF.",
+        title: t("فشل التحميل", "Download Failed"),
+        description: t("تعذر إنشاء ملف PDF.", "Could not create PDF file."),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadImage = async () => {
+    if (!posterRef.current) return;
+
+    try {
+      playSound("click");
+      toast({
+        title: t("جاري التحضير...", "Preparing..."),
+        description: t("يتم الآن تجهيز الصورة للتحميل.", "Preparing image for download."),
+      });
+
+      const canvas = await html2canvas(posterRef.current, {
+        scale: 3,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff"
+      });
+
+      const link = document.createElement("a");
+      link.download = `poster-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png", 1.0);
+      link.click();
+
+      playSound("success");
+      toast({
+        title: t("تم التحميل", "Download Complete"),
+        description: t("تم حفظ الصورة بنجاح.", "Image saved successfully."),
+      });
+    } catch (error) {
+      console.error("Image Download Error:", error);
+      playSound("error");
+      toast({
+        title: t("فشل التحميل", "Download Failed"),
+        description: t("تعذر حفظ الصورة.", "Could not save image."),
         variant: "destructive",
       });
     }
@@ -264,7 +310,7 @@ The image should be suitable for a health awareness poster. No text in the image
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-amber-50/30 font-sans" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-amber-50/30 font-sans" dir={dir}>
       <nav className="bg-white/80 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20 items-center gap-4">
@@ -272,20 +318,23 @@ The image should be suitable for a health awareness poster. No text in the image
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 p-0.5 shadow-lg shadow-teal-500/20">
                   <div className="w-full h-full bg-white rounded-xl flex items-center justify-center p-1">
-                    <img src={logoUrl} alt="شعار دائرة صحة كركوك" className="w-full h-full object-contain" />
+                    <img src={logoUrl} alt={t("شعار دائرة صحة كركوك", "Kirkuk Health Department Logo")} className="w-full h-full object-contain" />
                   </div>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-white border border-slate-100 shadow-sm p-1">
-                  <img src={ministryLogoUrl} alt="شعار وزارة الصحة" className="w-full h-full object-contain" />
+                  <img src={ministryLogoUrl} alt={t("شعار وزارة الصحة", "Ministry of Health Logo")} className="w-full h-full object-contain" />
                 </div>
               </div>
               <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-teal-600 to-amber-600 bg-clip-text text-transparent font-display">منصة التوعية الصحية</h1>
-                <p className="text-xs text-slate-500">دائرة صحة كركوك - قطاع كركوك الأول</p>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-teal-600 to-amber-600 bg-clip-text text-transparent font-display">
+                  {t("منصة التوعية الصحية", "Health Awareness Platform")}
+                </h1>
+                <p className="text-xs text-slate-500">{t("دائرة صحة كركوك - قطاع كركوك الأول", "Kirkuk Health Dept. - Sector 1")}</p>
               </div>
             </div>
             
             <div className="flex items-center gap-2">
+              <LanguageToggle />
               {user ? (
                 <>
                   <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full text-sm text-slate-600">
@@ -358,6 +407,7 @@ The image should be suitable for a health awareness poster. No text in the image
                 onGenerate={handleGenerate}
                 onOrientationChange={setOrientation}
                 onDownload={handleDownload}
+                onDownloadImage={handleDownloadImage}
                 onGenerateImage={handleGenerateImage}
                 orientation={orientation}
                 isGenerating={generateMutation.isPending}
@@ -371,6 +421,7 @@ The image should be suitable for a health awareness poster. No text in the image
                 selectedTheme={selectedTheme}
                 onThemeChange={setSelectedTheme}
                 colorThemes={colorThemes}
+                language={language}
               />
 
               {posterContent && (
@@ -416,7 +467,9 @@ The image should be suitable for a health awareness poster. No text in the image
             </div>
           </div>
 
-          <div className="lg:col-span-8">
+          <div className="lg:col-span-8 space-y-6">
+            <DailyHealthTip />
+            
             <div className="bg-white/60 backdrop-blur-sm rounded-3xl border border-slate-200/50 shadow-xl shadow-slate-200/40 p-2">
               <div className="bg-gradient-to-br from-slate-100 to-slate-50 rounded-2xl p-6 md:p-10 flex items-center justify-center min-h-[600px] lg:min-h-[800px] overflow-hidden relative">
                 
@@ -441,9 +494,9 @@ The image should be suitable for a health awareness poster. No text in the image
             <div className="mt-4 flex justify-between items-center text-sm text-slate-500 px-4">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></div>
-                <span>معاينة حية - A4 {orientation === 'portrait' ? 'عمودي' : 'أفقي'}</span>
+                <span>{t("معاينة حية", "Live Preview")} - A4 {orientation === 'portrait' ? t('عمودي', 'Portrait') : t('أفقي', 'Landscape')}</span>
               </div>
-              <p className="font-mono text-xs bg-slate-100 px-2 py-1 rounded-md">210 × 297 مم</p>
+              <p className="font-mono text-xs bg-slate-100 px-2 py-1 rounded-md">210 × 297 {t("مم", "mm")}</p>
             </div>
           </div>
           
