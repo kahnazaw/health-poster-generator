@@ -224,29 +224,43 @@ The image should be suitable for a health awareness poster. No text in the image
       const blob = await response.blob();
       const filename = `poster-${Date.now()}.pdf`;
 
-      if (isMobileDevice() && navigator.share && navigator.canShare) {
-        const file = new File([blob], filename, { type: 'application/pdf' });
-        if (navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({
-              files: [file],
-              title: t("بوستر صحي", "Health Poster"),
-            });
-            toast({
-              title: t("تم المشاركة", "Shared"),
-              description: t("اختر 'حفظ في الملفات' لتنزيل الملف.", "Choose 'Save to Files' to download."),
-            });
-            playSound("success");
-            return;
-          } catch (shareError) {
-            if ((shareError as Error).name === 'AbortError') {
+      const url = URL.createObjectURL(blob);
+      
+      if (isMobileDevice()) {
+        if (navigator.share && navigator.canShare) {
+          const file = new File([blob], filename, { type: 'application/pdf' });
+          if (navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: t("بوستر صحي", "Health Poster"),
+              });
+              playSound("success");
+              toast({
+                title: t("تم بنجاح", "Success"),
+                description: t("اختر 'حفظ في الملفات' من القائمة.", "Choose 'Save to Files' from the menu."),
+              });
+              URL.revokeObjectURL(url);
               return;
+            } catch (shareError) {
+              if ((shareError as Error).name === 'AbortError') {
+                URL.revokeObjectURL(url);
+                return;
+              }
             }
           }
         }
+        
+        window.open(url, '_blank');
+        playSound("success");
+        toast({
+          title: t("تم فتح الملف", "File Opened"),
+          description: t("اضغط على زر التحميل في المتصفح لحفظ الملف.", "Tap the download button in browser to save."),
+        });
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+        return;
       }
       
-      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = filename;
@@ -314,29 +328,43 @@ The image should be suitable for a health awareness poster. No text in the image
       const blob = await response.blob();
       const filename = `poster-${Date.now()}.png`;
 
-      if (isMobileDevice() && navigator.share && navigator.canShare) {
-        const file = new File([blob], filename, { type: 'image/png' });
-        if (navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({
-              files: [file],
-              title: t("بوستر صحي", "Health Poster"),
-            });
-            toast({
-              title: t("تم المشاركة", "Shared"),
-              description: t("اختر 'حفظ في الصور' لتنزيل الصورة.", "Choose 'Save to Photos' to download."),
-            });
-            playSound("success");
-            return;
-          } catch (shareError) {
-            if ((shareError as Error).name === 'AbortError') {
+      const url = URL.createObjectURL(blob);
+      
+      if (isMobileDevice()) {
+        if (navigator.share && navigator.canShare) {
+          const file = new File([blob], filename, { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: t("بوستر صحي", "Health Poster"),
+              });
+              playSound("success");
+              toast({
+                title: t("تم بنجاح", "Success"),
+                description: t("اختر 'حفظ الصورة' من القائمة.", "Choose 'Save Image' from the menu."),
+              });
+              URL.revokeObjectURL(url);
               return;
+            } catch (shareError) {
+              if ((shareError as Error).name === 'AbortError') {
+                URL.revokeObjectURL(url);
+                return;
+              }
             }
           }
         }
+        
+        window.open(url, '_blank');
+        playSound("success");
+        toast({
+          title: t("تم فتح الصورة", "Image Opened"),
+          description: t("اضغط مطولاً على الصورة واختر 'حفظ الصورة'.", "Long press the image and choose 'Save Image'."),
+        });
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+        return;
       }
       
-      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = filename;
