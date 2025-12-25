@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Building2 } from "lucide-react";
+import logoUrl from "@/assets/logo.png";
 import ministryLogoUrl from "@/assets/ministry-logo.png";
 
 interface PosterPreviewProps {
@@ -36,22 +37,21 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-secondary/5 to-transparent rounded-tr-full -z-0" />
           
           <header className="relative z-10 px-12 py-8 flex justify-between items-start border-b-4 border-primary/20">
-            <div className="flex items-start gap-4">
-              <div className="w-24 h-24 bg-white border-2 border-slate-100 rounded-lg shadow-sm flex items-center justify-center overflow-hidden p-1">
-                <img src={ministryLogoUrl} alt="شعار وزارة الصحة العراقية" className="w-full h-full object-contain" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <h2 className="text-xl font-bold text-primary">
-                  وزارة الصحة العراقية
-                </h2>
-                <h3 className="text-lg text-slate-600 font-semibold">دائرة صحة كركوك</h3>
-                <p className="text-sm text-slate-500 font-medium">قطاع كركوك الأول</p>
-                <p className="text-sm text-slate-500 font-medium">وحدة تعزيز الصحة</p>
-              </div>
+            <div className="flex flex-col gap-1">
+              <h2 className="text-xl font-bold text-primary flex items-center gap-2">
+                <img src={ministryLogoUrl} alt="شعار وزارة الصحة" className="w-6 h-6 object-contain" />
+                وزارة الصحة العراقية
+              </h2>
+              <h3 className="text-lg text-slate-600 font-semibold">دائرة صحة كركوك</h3>
+              <p className="text-sm text-slate-500 font-medium">قطاع كركوك الأول</p>
+              <p className="text-sm text-slate-500 font-medium">وحدة تعزيز الصحة</p>
             </div>
 
             <div className="flex flex-col items-end text-left">
-              <p className="text-lg font-bold text-secondary max-w-[200px] text-center">
+              <div className="w-28 h-28 bg-white border-2 border-slate-100 rounded-full shadow-sm flex items-center justify-center mb-2 overflow-hidden p-2">
+                <img src={logoUrl} alt="شعار دائرة صحة كركوك" className="w-full h-full object-contain" />
+              </div>
+              <p className="text-sm font-bold text-secondary mt-1 max-w-[200px] text-center">
                 {centerName || "اسم المركز الصحي"}
               </p>
             </div>
