@@ -114,7 +114,59 @@ capacitor.config.ts  # Capacitor configuration
 
 ## Building for Android
 
-1. Build the web app: `npm run build`
-2. Sync with Capacitor: `npx cap sync android`
-3. Open in Android Studio: `npx cap open android`
-4. Build APK from Android Studio
+### Prerequisites
+- Android Studio installed on your local machine
+- Java JDK 17+ installed
+- Android SDK with API level 33+ installed
+
+### Build Steps
+
+1. **Build the web app**:
+   ```bash
+   npm run build
+   ```
+
+2. **Sync with Capacitor**:
+   ```bash
+   npx cap sync android
+   ```
+
+3. **Open in Android Studio**:
+   ```bash
+   npx cap open android
+   ```
+   Or manually open the `android/` folder in Android Studio.
+
+4. **Build APK from Android Studio**:
+   - Go to `Build > Build Bundle(s) / APK(s) > Build APK(s)`
+   - Wait for the build to complete
+   - APK will be located at: `android/app/build/outputs/apk/debug/app-debug.apk`
+
+5. **Build Signed Release APK** (for distribution):
+   - Go to `Build > Generate Signed Bundle / APK`
+   - Select `APK` and click Next
+   - Create or select a keystore file
+   - Enter keystore password and key alias
+   - Select `release` build variant
+   - APK will be at: `android/app/build/outputs/apk/release/app-release.apk`
+
+### Configuration
+The app is configured in `capacitor.config.ts`:
+- **App ID**: `com.kirkuk.health.poster`
+- **App Name**: `بوسترات صحية` (Health Posters)
+- **Server URL**: Points to the deployed web app URL
+
+### Important Notes
+- The Android app is a WebView wrapper around the web application
+- For offline functionality, additional PWA configuration would be needed
+- Update the `server.url` in `capacitor.config.ts` to point to your production URL before building for release
+
+## Recent Changes
+
+### December 2024
+- Added dark mode with theme toggle across all pages
+- Added admin notifications panel showing new user registrations
+- Added monthly reports section with poster statistics and top topics/centers
+- Added print preview modal with full-size poster display
+- Enhanced Dashboard with notifications and analytics for admins
+- Added daily health tips feature with rotating content
