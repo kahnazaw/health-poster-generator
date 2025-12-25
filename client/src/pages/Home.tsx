@@ -174,6 +174,15 @@ The image should be suitable for a health awareness poster. No text in the image
     return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
   };
 
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const handleDownload = async () => {
     if (!posterRef.current) return;
 
@@ -214,23 +223,46 @@ The image should be suitable for a health awareness poster. No text in the image
       }
 
       const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
       const filename = `poster-${Date.now()}.pdf`;
 
-      if (isIOSDevice()) {
-        window.open(url, '_blank');
+      if (isMobileDevice()) {
+        const base64Data = await blobToBase64(blob);
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+          newWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>${filename}</title>
+              <style>
+                body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #1a1a1a; }
+                embed, iframe { width: 100%; height: 100vh; border: none; }
+                .download-btn { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; background: #0d9488; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; z-index: 1000; }
+              </style>
+            </head>
+            <body>
+              <embed src="${base64Data}" type="application/pdf" width="100%" height="100%">
+              <a href="${base64Data}" download="${filename}" class="download-btn">تحميل PDF</a>
+            </body>
+            </html>
+          `);
+          newWindow.document.close();
+        }
         toast({
           title: t("تم فتح PDF", "PDF Opened"),
-          description: t("اضغط على زر المشاركة لحفظ الملف.", "Tap the share button to save the file."),
+          description: t("اضغط على زر التحميل لحفظ الملف.", "Tap the download button to save the file."),
         });
       } else {
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.download = filename;
-        link.target = '_blank';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
         
         toast({
           title: t("تم التحميل", "Download Complete"),
@@ -238,7 +270,6 @@ The image should be suitable for a health awareness poster. No text in the image
         });
       }
       
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
       playSound("success");
     } catch (error) {
       console.error("PDF Generation Error:", error);
@@ -293,23 +324,48 @@ The image should be suitable for a health awareness poster. No text in the image
       }
 
       const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
       const filename = `poster-${Date.now()}.png`;
 
-      if (isIOSDevice()) {
-        window.open(url, '_blank');
+      if (isMobileDevice()) {
+        const base64Data = await blobToBase64(blob);
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+          newWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>${filename}</title>
+              <style>
+                body { margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; background: #1a1a1a; }
+                img { max-width: 100%; height: auto; border-radius: 8px; }
+                .download-btn { margin-top: 20px; padding: 12px 24px; background: #0d9488; color: white; border: none; border-radius: 8px; font-size: 16px; text-decoration: none; }
+                p { color: white; margin-top: 10px; font-family: sans-serif; }
+              </style>
+            </head>
+            <body>
+              <img src="${base64Data}" alt="Poster">
+              <a href="${base64Data}" download="${filename}" class="download-btn">تحميل الصورة</a>
+              <p>اضغط مطولاً على الصورة لحفظها أو اضغط على زر التحميل</p>
+            </body>
+            </html>
+          `);
+          newWindow.document.close();
+        }
         toast({
           title: t("تم فتح الصورة", "Image Opened"),
           description: t("اضغط مطولاً على الصورة لحفظها.", "Long-press the image to save it."),
         });
       } else {
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.download = filename;
-        link.target = '_blank';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
         
         toast({
           title: t("تم التحميل", "Download Complete"),
@@ -317,7 +373,6 @@ The image should be suitable for a health awareness poster. No text in the image
         });
       }
 
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
       playSound("success");
     } catch (error) {
       console.error("Image Download Error:", error);
