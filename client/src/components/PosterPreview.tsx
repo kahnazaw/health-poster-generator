@@ -76,7 +76,7 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
                   className="w-20 h-20 bg-white rounded-2xl p-2 flex items-center justify-center shadow-xl"
                   style={{ border: `4px solid ${theme.secondary}` }}
                 >
-                  <img src={ministryLogoUrl} alt="شعار وزارة الصحة" className="w-full h-full object-contain" />
+                  <img src={ministryLogoUrl} alt="شعار وزارة الصحة" className="w-full h-full object-contain" crossOrigin="anonymous" />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold drop-shadow-md">وزارة الصحة العراقية</h2>
@@ -90,7 +90,7 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
                 className="w-24 h-24 bg-white rounded-2xl shadow-xl flex items-center justify-center p-2"
                 style={{ border: `4px solid ${theme.secondary}` }}
               >
-                <img src={logoUrl} alt="شعار دائرة صحة كركوك" className="w-full h-full object-contain" />
+                <img src={logoUrl} alt="شعار دائرة صحة كركوك" className="w-full h-full object-contain" crossOrigin="anonymous" />
               </div>
             </div>
           </header>
@@ -109,10 +109,11 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
                   <h1 
                     className="text-5xl font-extrabold leading-tight mb-4 font-display"
                     style={{ 
-                      background: `linear-gradient(135deg, ${theme.primary}, ${theme.primary}cc)`,
+                      backgroundImage: `linear-gradient(135deg, ${theme.primary}, ${theme.primary}cc)`,
+                      backgroundClip: "text",
                       WebkitBackgroundClip: "text",
                       WebkitTextFillColor: "transparent",
-                      backgroundClip: "text"
+                      color: "transparent"
                     }}
                   >
                     {generatedContent.title}

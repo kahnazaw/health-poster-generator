@@ -21,13 +21,39 @@ export function registerImageRoutes(app: Express): void {
       if (!imageData) {
         return res.status(500).json({ error: "No image data returned" });
       }
-      res.json({
-        url: imageData.url,
-        b64_json: imageData.b64_json,
-      });
-    } catch (error) {
+      
+      // If we have b64_json, use it directly. Otherwise fetch URL and convert
+      if (imageData.b64_json) {
+        res.json({
+          url: imageData.url,
+          b64_json: imageData.b64_json,
+        });
+      } else if (imageData.url) {
+        // Fetch the image and convert to base64
+        try {
+          const imageResponse = await fetch(imageData.url);
+          const arrayBuffer = await imageResponse.arrayBuffer();
+          const base64 = Buffer.from(arrayBuffer).toString('base64');
+          res.json({
+            url: imageData.url,
+            b64_json: base64,
+          });
+        } catch (fetchError) {
+          console.error("Error fetching image URL:", fetchError);
+          res.json({
+            url: imageData.url,
+            b64_json: null,
+          });
+        }
+      } else {
+        res.status(500).json({ error: "No image data available" });
+      }
+    } catch (error: any) {
       console.error("Error generating image:", error);
-      res.status(500).json({ error: "Failed to generate image" });
+      res.status(500).json({ 
+        error: "Failed to generate image",
+        message: error.message || "Unknown error"
+      });
     }
   });
 }

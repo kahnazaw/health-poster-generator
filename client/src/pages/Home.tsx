@@ -177,12 +177,22 @@ The image should be suitable for a health awareness poster. No text in the image
 
       const element = posterRef.current;
       
+      // Store original transform and temporarily remove scale for high-quality capture
+      const originalTransform = element.style.transform;
+      element.style.transform = 'none';
+      
       const canvas = await html2canvas(element, {
-        scale: 3,
+        scale: 2,
         useCORS: true,
+        allowTaint: true,
         logging: false,
-        backgroundColor: "#ffffff"
+        backgroundColor: "#ffffff",
+        width: element.scrollWidth,
+        height: element.scrollHeight,
       });
+      
+      // Restore original transform
+      element.style.transform = originalTransform;
 
       const imgData = canvas.toDataURL("image/png", 1.0);
       
@@ -224,12 +234,24 @@ The image should be suitable for a health awareness poster. No text in the image
         description: t("يتم الآن تجهيز الصورة للتحميل.", "Preparing image for download."),
       });
 
-      const canvas = await html2canvas(posterRef.current, {
-        scale: 3,
+      const element = posterRef.current;
+      
+      // Store original transform and temporarily remove scale for high-quality capture
+      const originalTransform = element.style.transform;
+      element.style.transform = 'none';
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
         useCORS: true,
+        allowTaint: true,
         logging: false,
-        backgroundColor: "#ffffff"
+        backgroundColor: "#ffffff",
+        width: element.scrollWidth,
+        height: element.scrollHeight,
       });
+      
+      // Restore original transform
+      element.style.transform = originalTransform;
 
       const link = document.createElement("a");
       link.download = `poster-${Date.now()}.png`;
