@@ -165,21 +165,62 @@ The image should be suitable for a health awareness poster. No text in the image
     }
   };
 
-  const isMobileDevice = () => {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  };
+  // Helper function to generate export HTML with inlined styles
+  const generateExportHtml = (element: HTMLElement, posterOrientation: string) => {
+    const clone = element.cloneNode(true) as HTMLElement;
+    
+    // Remove transform/scale from clone for proper export
+    clone.style.transform = 'none';
+    clone.style.marginBottom = '0';
+    
+    // Get computed styles and inline them
+    const inlineStyles = (el: Element) => {
+      const computed = window.getComputedStyle(el);
+      const htmlEl = el as HTMLElement;
+      const important = [
+        'background', 'backgroundColor', 'backgroundImage', 'color', 
+        'fontFamily', 'fontSize', 'fontWeight', 'textAlign', 'direction',
+        'display', 'flexDirection', 'justifyContent', 'alignItems', 'gap',
+        'padding', 'margin', 'border', 'borderRadius', 'width', 'height',
+        'position', 'top', 'left', 'right', 'bottom', 'zIndex', 'opacity',
+        'clipPath', 'overflow', 'lineHeight', 'letterSpacing', 'flex',
+        'minHeight', 'maxHeight', 'minWidth', 'maxWidth', 'boxShadow',
+        'textShadow', 'transform', 'aspectRatio', 'objectFit'
+      ];
+      important.forEach(prop => {
+        const value = computed.getPropertyValue(prop.replace(/[A-Z]/g, m => '-' + m.toLowerCase()));
+        if (value && value !== 'none' && value !== 'auto' && value !== 'normal') {
+          htmlEl.style.setProperty(prop.replace(/[A-Z]/g, m => '-' + m.toLowerCase()), value);
+        }
+      });
+      Array.from(el.children).forEach(child => inlineStyles(child));
+    };
+    inlineStyles(clone);
+    
+    const cloneHtml = clone.outerHTML;
+    const isLandscape = posterOrientation === 'landscape';
 
-  const isIOSDevice = () => {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
-  };
-
-  const blobToBase64 = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
+    return `
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { 
+  margin: 0; 
+  padding: 0;
+  width: ${isLandscape ? '297mm' : '210mm'};
+  height: ${isLandscape ? '210mm' : '297mm'};
+  overflow: hidden;
+}
+</style>
+</head>
+<body>
+${cloneHtml}
+</body>
+</html>
+`;
   };
 
   const handleDownload = async () => {
@@ -192,39 +233,13 @@ The image should be suitable for a health awareness poster. No text in the image
         description: t("يتم الآن تجهيز ملف PDF للتحميل.", "Preparing PDF for download."),
       });
 
-      const posterHtml = posterRef.current.outerHTML;
-      
-      const styles = Array.from(document.styleSheets)
-        .map(sheet => {
-          try {
-            return Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
-          } catch {
-            return '';
-          }
-        })
-        .join('\n');
-
-      const fullHtml = `
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8" />
-<style>
-${styles}
-body { margin: 0; }
-</style>
-</head>
-<body>
-${posterHtml}
-</body>
-</html>
-`;
+      const exportHtml = generateExportHtml(posterRef.current, orientation);
 
       const response = await fetch('/api/export-poster', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          html: fullHtml,
+          html: exportHtml,
           format: 'pdf',
           orientation: orientation
         }),
@@ -273,39 +288,13 @@ ${posterHtml}
         description: t("يتم الآن تجهيز الصورة للتحميل.", "Preparing image for download."),
       });
 
-      const posterHtml = posterRef.current.outerHTML;
-      
-      const styles = Array.from(document.styleSheets)
-        .map(sheet => {
-          try {
-            return Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
-          } catch {
-            return '';
-          }
-        })
-        .join('\n');
-
-      const fullHtml = `
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8" />
-<style>
-${styles}
-body { margin: 0; }
-</style>
-</head>
-<body>
-${posterHtml}
-</body>
-</html>
-`;
+      const exportHtml = generateExportHtml(posterRef.current, orientation);
 
       const response = await fetch('/api/export-poster', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          html: fullHtml,
+          html: exportHtml,
           format: 'png',
           orientation: orientation
         }),
