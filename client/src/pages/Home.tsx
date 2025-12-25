@@ -15,7 +15,7 @@ export default function Home() {
   const generateMutation = useGeneratePoster();
 
   const handleGenerate = (data: { topic: string; centerName: string }) => {
-    generateMutation.mutate(data, {
+    generateMutation.mutate({ ...data, orientation }, {
       onSuccess: (content) => {
         setPosterContent(content);
         toast({
@@ -158,7 +158,7 @@ export default function Home() {
                   ref={posterRef}
                   orientation={orientation}
                   topic={posterContent ? posterContent.title : ""}
-                  centerName={posterContent ? "مركز صحي..." : ""} // This gets passed inside component from content or props
+                  centerName={posterContent ? "" : ""} // Corrected placeholder
                   generatedContent={posterContent}
                   isLoading={generateMutation.isPending}
                 />
