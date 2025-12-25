@@ -19,6 +19,7 @@ interface Analytics {
   postersByCenter: { centerName: string; count: number }[];
   postersByDate: { date: string; count: number }[];
   recentActivity: { name: string; topic: string; date: string }[];
+  userStats: { name: string; healthCenter: string; posterCount: number }[];
 }
 
 interface PendingUser {
@@ -365,6 +366,54 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {analytics?.userStats && analytics.userStats.length > 0 && (
+          <Card className="bg-white/80 backdrop-blur-sm border-slate-200/50 shadow-lg shadow-slate-200/30 mb-8">
+            <CardHeader>
+              <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <Users className="w-5 h-5 text-teal-500" />
+                إحصائيات المستخدمين حسب المركز الصحي
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full" data-testid="table-user-stats">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="text-right py-3 px-4 font-semibold text-slate-600">الاسم</th>
+                      <th className="text-right py-3 px-4 font-semibold text-slate-600">المركز الصحي</th>
+                      <th className="text-center py-3 px-4 font-semibold text-slate-600">عدد البوسترات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.userStats.map((userStat, idx) => (
+                      <tr 
+                        key={idx} 
+                        className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
+                        data-testid={`user-stat-row-${idx}`}
+                      >
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-amber-500 flex items-center justify-center text-white font-bold text-sm">
+                              {userStat.name.charAt(0)}
+                            </div>
+                            <span className="font-medium text-slate-800">{userStat.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-slate-600">{userStat.healthCenter}</td>
+                        <td className="py-3 px-4 text-center">
+                          <Badge variant={userStat.posterCount > 0 ? "default" : "secondary"}>
+                            {userStat.posterCount}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {analytics?.recentActivity && analytics.recentActivity.length > 0 && (
           <Card className="bg-white/80 backdrop-blur-sm border-slate-200/50 shadow-lg shadow-slate-200/30">

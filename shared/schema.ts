@@ -7,6 +7,7 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  healthCenter: text("health_center").notNull().default("غير محدد"),
   role: text("role").default("user"),
   status: text("status").default("pending"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -34,8 +35,10 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   passwordHash: true,
   role: true,
+  status: true,
 }).extend({
   password: z.string().min(6),
+  healthCenter: z.string().min(2, "اسم المركز الصحي مطلوب"),
 });
 
 export const loginSchema = z.object({
