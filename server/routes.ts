@@ -406,11 +406,13 @@ export async function registerRoutes(
       
       await page.setViewport({ width, height, deviceScaleFactor: 2 });
 
-      // Set content directly - client sends full HTML document
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+      // Use data URL to properly pass HTML with encoding
+      const dataUrl = "data:text/html;charset=utf-8," + encodeURIComponent(html);
+      await page.goto(dataUrl, { waitUntil: 'networkidle0' });
       
-      // Wait for fonts to load
-      await page.waitForFunction(() => document.fonts.status === 'loaded');
+      // Wait for rendering
+      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => r(undefined))));
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       if (format === 'pdf') {
         const pdfBuffer = await page.pdf({
