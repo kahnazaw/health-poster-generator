@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { motion } from "framer-motion";
-import { HeartPulse, Stethoscope, Building2 } from "lucide-react";
+import { HeartPulse, Building2 } from "lucide-react";
+import logoUrl from "@/assets/logo.png";
 
 interface PosterPreviewProps {
   orientation: "portrait" | "landscape";
@@ -52,10 +53,9 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
             </div>
 
             <div className="flex flex-col items-end text-left">
-              {/* Logo Placeholder */}
-              <div className="w-24 h-24 bg-white border-2 border-slate-100 rounded-full shadow-sm flex items-center justify-center mb-2">
-                <Stethoscope className="w-12 h-12 text-secondary" />
-                {/* <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" /> */}
+              {/* Logo */}
+              <div className="w-24 h-24 bg-white border-2 border-slate-100 rounded-full shadow-sm flex items-center justify-center mb-2 overflow-hidden p-1">
+                <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
               </div>
               <p className="text-sm font-bold text-secondary mt-1 max-w-[200px] text-center">
                 {centerName || "اسم المركز الصحي"}
