@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مولد الملصقات الصحية</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      background-color: #f0f2f5;
+    }
+
+    h1 {
+      color: #2c3e50;
+    }
+
+    textarea {
+      width: 500px;
+      height: 150px;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 6px;
+      border: none;
+      background-color: #3498db;
+      color: white;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    #poster {
+      width: 500px;
+      min-height: 700px;
+      margin-top: 20px;
+      padding: 20px;
+      background-color: #ffffff;
+      border: 2px solid #333;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      position: relative;
+      text-align: center;
+      display: none;
+      border-radius: 10px;
+    }
+
+    #poster img {
+      max-width: 150px;
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    #posterText {
+      margin-top: 100px;
+      font-size: 20px;
+      line-height: 1.5;
+      color: #2c3e50;
+      word-wrap: break-word;
+    }
+
+    /* خيارات إضافية */
+    .options {
+      margin-bottom: 10px;
+    }
+    select {
+      padding: 5px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-left: 10px;
+    }
+
+  </style>
+</head>
+<body>
+
+<h1>مولد الملصقات الصحية - قطاع كركوك الأول</h1>
+
+<textarea id="message" placeholder="اكتب رسالتك هنا..."></textarea>
+
+<div class="options">
+  <label>لون النص:
+    <select id="textColor">
+      <option value="#2c3e50">أسود</option>
+      <option value="#e74c3c">أحمر</option>
+      <option value="#27ae60">أخضر</option>
+      <option value="#2980b9">أزرق</option>
+    </select>
+  </label>
+  <label>خلفية الملصق:
+    <select id="bgColor">
+      <option value="#ffffff">أبيض</option>
+      <option value="#f9f9f9">رمادي فاتح</option>
+      <option value="#fcf3cf">أصفر فاتح</option>
+      <option value="#d6eaf8">أزرق فاتح</option>
+    </select>
+  </label>
+</div>
+
+<button id="generateBtn">عرض الملصق</button>
+<button id="downloadBtn">تحميل PDF</button>
+
+<div id="poster">
+  <!-- شعار دائرة الصحة -->
+  <img src="https://i.ibb.co/HCQ4zrn/health-logo.png" alt="شعار دائرة الصحة">
+  <div id="posterText"></div>
+</div>
+
+<script>
+  const messageInput = document.getElementById("message");
+  const poster = document.getElementById("poster");
+  const posterText = document.getElementById("posterText");
+  const textColorSelect = document.getElementById("textColor");
+  const bgColorSelect = document.getElementById("bgColor");
+
+  // عرض الملصق مع الخيارات
+  document.getElementById("generateBtn").addEventListener("click", () => {
+    const text = messageInput.value.trim();
+    if(text === "") {
+      alert("الرجاء كتابة رسالة!");
+      return;
+    }
+
+    posterText.textContent = text;
+    posterText.style.color = textColorSelect.value;
+    poster.style.backgroundColor = bgColorSelect.value;
+    poster.style.display = "block";
+  });
+
+  // تحميل الملصق كـ PDF
+  document.getElementById("downloadBtn").addEventListener("click", () => {
+    if(poster.style.display === "none") {
+      alert("الرجاء عرض الملصق أولاً!");
+      return;
+    }
+
+    const options = {
+      margin: 10,
+      filename: 'health-poster.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, logging: true, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(options).from(poster).save();
+  });
+</script>
+
+</body>
+</html>

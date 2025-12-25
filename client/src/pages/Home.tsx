@@ -1,7 +1,6 @@
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import html2canvas from "html2canvas";
-import html2pdf from "html2pdf.js";
 import { GeneratorForm } from "@/components/GeneratorForm";
 import { PosterPreview } from "@/components/PosterPreview";
 import { DailyHealthTip } from "@/components/DailyHealthTip";
@@ -193,27 +192,69 @@ The image should be suitable for a health awareness poster. No text in the image
         description: t("يتم الآن تجهيز ملف PDF للتحميل.", "Preparing PDF for download."),
       });
 
-      const element = posterRef.current;
+      const posterHtml = posterRef.current.outerHTML;
+      
+      const styles = Array.from(document.styleSheets)
+        .map(sheet => {
+          try {
+            return Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
+          } catch {
+            return '';
+          }
+        })
+        .join('\n');
+
+      const fullHtml = `<style>${styles}</style>${posterHtml}`;
+
+      const response = await fetch('/api/export-poster', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          html: fullHtml,
+          format: 'pdf',
+          orientation: orientation
+        }),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      const blob = await response.blob();
       const filename = `poster-${Date.now()}.pdf`;
 
-      const options = {
-        margin: 10,
-        filename: filename,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { 
-          scale: 2, 
-          useCORS: true,
-          allowTaint: true,
-          logging: true
-        },
-        jsPDF: { 
-          unit: 'mm' as const, 
-          format: 'a4' as const, 
-          orientation: orientation as 'portrait' | 'landscape'
+      if (isMobileDevice() && navigator.share && navigator.canShare) {
+        const file = new File([blob], filename, { type: 'application/pdf' });
+        if (navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: t("بوستر صحي", "Health Poster"),
+            });
+            toast({
+              title: t("تم المشاركة", "Shared"),
+              description: t("اختر 'حفظ في الملفات' لتنزيل الملف.", "Choose 'Save to Files' to download."),
+            });
+            playSound("success");
+            return;
+          } catch (shareError) {
+            if ((shareError as Error).name === 'AbortError') {
+              return;
+            }
+          }
         }
-      };
-
-      await html2pdf().set(options).from(element).save();
+      }
+      
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
       
       playSound("success");
       toast({
@@ -241,56 +282,75 @@ The image should be suitable for a health awareness poster. No text in the image
         description: t("يتم الآن تجهيز الصورة للتحميل.", "Preparing image for download."),
       });
 
-      const canvas = await html2canvas(posterRef.current, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        backgroundColor: "#ffffff"
+      const posterHtml = posterRef.current.outerHTML;
+      
+      const styles = Array.from(document.styleSheets)
+        .map(sheet => {
+          try {
+            return Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
+          } catch {
+            return '';
+          }
+        })
+        .join('\n');
+
+      const fullHtml = `<style>${styles}</style>${posterHtml}`;
+
+      const response = await fetch('/api/export-poster', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          html: fullHtml,
+          format: 'png',
+          orientation: orientation
+        }),
+        credentials: 'include'
       });
 
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      const blob = await response.blob();
       const filename = `poster-${Date.now()}.png`;
 
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          throw new Error('Failed to create image');
-        }
-
-        if (isMobileDevice() && navigator.share && navigator.canShare) {
-          const file = new File([blob], filename, { type: 'image/png' });
-          if (navigator.canShare({ files: [file] })) {
-            try {
-              await navigator.share({
-                files: [file],
-                title: t("بوستر صحي", "Health Poster"),
-              });
-              toast({
-                title: t("تم المشاركة", "Shared"),
-                description: t("يمكنك حفظ الصورة من قائمة المشاركة.", "You can save the image from the share menu."),
-              });
-            } catch (shareError) {
-              if ((shareError as Error).name !== 'AbortError') {
-                const link = document.createElement('a');
-                link.href = canvas.toDataURL('image/png');
-                link.download = filename;
-                link.click();
-              }
+      if (isMobileDevice() && navigator.share && navigator.canShare) {
+        const file = new File([blob], filename, { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: t("بوستر صحي", "Health Poster"),
+            });
+            toast({
+              title: t("تم المشاركة", "Shared"),
+              description: t("اختر 'حفظ في الصور' لتنزيل الصورة.", "Choose 'Save to Photos' to download."),
+            });
+            playSound("success");
+            return;
+          } catch (shareError) {
+            if ((shareError as Error).name === 'AbortError') {
+              return;
             }
           }
-        } else {
-          const link = document.createElement('a');
-          link.href = canvas.toDataURL('image/png');
-          link.download = filename;
-          link.click();
-          
-          toast({
-            title: t("تم التحميل", "Download Complete"),
-            description: t("تم حفظ الصورة بنجاح.", "Image saved successfully."),
-          });
         }
-
-        playSound("success");
-      }, 'image/png');
+      }
+      
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      
+      playSound("success");
+      toast({
+        title: t("تم التحميل", "Download Complete"),
+        description: t("تم حفظ الصورة بنجاح.", "Image saved successfully."),
+      });
     } catch (error) {
       console.error("Image Download Error:", error);
       playSound("error");
