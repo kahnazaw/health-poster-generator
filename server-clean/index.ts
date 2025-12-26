@@ -3,26 +3,20 @@ import express from "express";
 const app = express();
 
 /**
- * 🚨 هذا هو السطر الحاسم
- * Railway يمرر PORT تلقائيًا
+ * Railway يعطي PORT إجباريًا
+ * لا نضع أي رقم افتراضي
  */
-const PORT = Number(process.env.PORT);
+const port = process.env.PORT;
 
-if (!PORT) {
-  throw new Error("PORT environment variable is missing");
+if (!port) {
+  console.error("❌ PORT is not defined");
+  process.exit(1);
 }
 
 app.get("/", (_req, res) => {
-  res.send("Server is running ✅");
+  res.send("Health Poster Generator API is running ✅");
 });
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
-
-/**
- * 🚨 مهم جدًا: 0.0.0.0
- */
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(Number(port), "0.0.0.0", () => {
+  console.log(`Server running on port ${port}`);
 });
