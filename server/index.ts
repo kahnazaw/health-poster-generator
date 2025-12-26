@@ -14,13 +14,13 @@ app.get("/", (_req: Request, res: Response) => {
   res.send("Server is running ✅");
 });
 
-// middleware للأخطاء
+// Error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
   res.status(500).json({ message: "Internal Server Error" });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
