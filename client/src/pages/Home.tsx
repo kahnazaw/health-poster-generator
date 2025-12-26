@@ -226,35 +226,52 @@ The image should be suitable for a health awareness poster. No text in the image
     // Convert images to data URLs for proper export using fetch to avoid CORS issues
     const convertImageToDataUrl = async (url: string): Promise<string> => {
       try {
-        const response = await fetch(url);
+        // Use credentials for same-origin requests
+        const response = await fetch(url, { 
+          credentials: 'include',
+          mode: 'cors'
+        });
+        if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
         const blob = await response.blob();
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = reject;
+          reader.onloadend = () => {
+            if (reader.result) {
+              resolve(reader.result as string);
+            } else {
+              reject(new Error('Failed to read blob'));
+            }
+          };
+          reader.onerror = () => reject(new Error('FileReader error'));
           reader.readAsDataURL(blob);
         });
       } catch (e) {
         console.warn('Could not convert image:', url, e);
+        // Try canvas approach as fallback for loaded images
         return url;
       }
     };
     
     const convertImages = async (el: Element): Promise<void> => {
       const images = el.querySelectorAll('img');
-      const promises: Promise<void>[] = [];
+      const conversions: Promise<void>[] = [];
       
       for (const img of Array.from(images)) {
         if (img.src && !img.src.startsWith('data:')) {
-          const promise = (async () => {
-            const dataUrl = await convertImageToDataUrl(img.src);
-            img.src = dataUrl;
+          const originalSrc = img.src;
+          const conversion = (async () => {
+            try {
+              const dataUrl = await convertImageToDataUrl(originalSrc);
+              img.setAttribute('src', dataUrl);
+            } catch (e) {
+              console.warn('Image conversion failed for:', originalSrc, e);
+            }
           })();
-          promises.push(promise);
+          conversions.push(conversion);
         }
       }
       
-      await Promise.all(promises);
+      await Promise.all(conversions);
     };
     
     // Get computed styles and inline them
@@ -439,6 +456,8 @@ ${cloneHtml}
     if (!posterRef.current) return;
 
     try {
+      playSound("click");
+      
       const canvas = await html2canvas(posterRef.current, {
         scale: 2,
         useCORS: true,
@@ -454,25 +473,52 @@ ${cloneHtml}
         ? `${posterContent.title}\n\n#صحتك_تهمنا #وعي_صحي\nدائرة صحة كركوك`
         : "بوستر توعية صحية";
 
-      if (navigator.share && navigator.canShare({ files: [new File([blob], "poster.png", { type: "image/png" })] })) {
+      const file = new File([blob], "poster.png", { type: "image/png" });
+      
+      // Try native sharing first (works on mobile)
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           title: posterContent?.title || "بوستر صحي",
           text: text,
-          files: [new File([blob], "poster.png", { type: "image/png" })]
+          files: [file]
+        });
+        toast({
+          title: t("تمت المشاركة", "Shared Successfully"),
+          description: t("تم مشاركة البوستر بنجاح", "Poster shared successfully"),
         });
       } else {
-        const url = platform === "whatsapp" 
+        // Desktop fallback: Download the image first, then open share URL
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `poster-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        // Then open the messaging app
+        const shareUrl = platform === "whatsapp" 
           ? `https://wa.me/?text=${encodeURIComponent(text)}`
           : `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(text)}`;
-        window.open(url, "_blank");
-      }
+        
+        setTimeout(() => {
+          window.open(shareUrl, "_blank");
+        }, 500);
 
-      toast({
-        title: "تم فتح المشاركة",
-        description: `يمكنك الآن مشاركة البوستر عبر ${platform === "whatsapp" ? "واتساب" : "تيليجرام"}`,
-      });
+        toast({
+          title: t("تم تحميل الصورة", "Image Downloaded"),
+          description: t("تم تحميل الصورة. يمكنك إرفاقها في المحادثة.", "Image downloaded. You can attach it in the chat."),
+        });
+      }
     } catch (error) {
       console.error("Share error:", error);
+      playSound("error");
+      toast({
+        title: t("خطأ في المشاركة", "Share Error"),
+        description: t("تعذر مشاركة البوستر", "Could not share the poster"),
+        variant: "destructive",
+      });
     }
   };
 
