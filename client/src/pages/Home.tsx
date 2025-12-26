@@ -216,12 +216,46 @@ The image should be suitable for a health awareness poster. No text in the image
   };
 
   // Helper function to generate export HTML with inlined styles
-  const generateExportHtml = (element: HTMLElement, posterOrientation: string) => {
+  const generateExportHtml = async (element: HTMLElement, posterOrientation: string) => {
     const clone = element.cloneNode(true) as HTMLElement;
     
     // Remove transform/scale from clone for proper export
     clone.style.transform = 'none';
     clone.style.marginBottom = '0';
+    
+    // Convert images to data URLs for proper export using fetch to avoid CORS issues
+    const convertImageToDataUrl = async (url: string): Promise<string> => {
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch (e) {
+        console.warn('Could not convert image:', url, e);
+        return url;
+      }
+    };
+    
+    const convertImages = async (el: Element): Promise<void> => {
+      const images = el.querySelectorAll('img');
+      const promises: Promise<void>[] = [];
+      
+      for (const img of Array.from(images)) {
+        if (img.src && !img.src.startsWith('data:')) {
+          const promise = (async () => {
+            const dataUrl = await convertImageToDataUrl(img.src);
+            img.src = dataUrl;
+          })();
+          promises.push(promise);
+        }
+      }
+      
+      await Promise.all(promises);
+    };
     
     // Get computed styles and inline them
     const inlineStyles = (el: Element) => {
@@ -235,7 +269,9 @@ The image should be suitable for a health awareness poster. No text in the image
         'position', 'top', 'left', 'right', 'bottom', 'zIndex', 'opacity',
         'clipPath', 'overflow', 'lineHeight', 'letterSpacing', 'flex',
         'minHeight', 'maxHeight', 'minWidth', 'maxWidth', 'boxShadow',
-        'textShadow', 'transform', 'aspectRatio', 'objectFit'
+        'textShadow', 'transform', 'aspectRatio', 'objectFit', 'gridTemplateColumns',
+        'gridTemplateRows', 'gridGap', 'gridColumn', 'gridRow', 'flexGrow', 'flexShrink',
+        'flexBasis', 'flexWrap', 'whiteSpace', 'textOverflow', 'wordBreak'
       ];
       important.forEach(prop => {
         const value = computed.getPropertyValue(prop.replace(/[A-Z]/g, m => '-' + m.toLowerCase()));
@@ -245,24 +281,40 @@ The image should be suitable for a health awareness poster. No text in the image
       });
       Array.from(el.children).forEach(child => inlineStyles(child));
     };
+    
     inlineStyles(clone);
+    await convertImages(clone);
     
     const cloneHtml = clone.outerHTML;
     const isLandscape = posterOrientation === 'landscape';
+    const width = isLandscape ? 1122 : 794;
+    const height = isLandscape ? 794 : 1122;
 
     return `
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap');
+* { 
+  margin: 0; 
+  padding: 0; 
+  box-sizing: border-box; 
+  font-family: 'Cairo', 'Tajawal', 'Noto Sans Arabic', sans-serif !important;
+}
 html, body { 
   margin: 0; 
   padding: 0;
-  width: ${isLandscape ? '297mm' : '210mm'};
-  height: ${isLandscape ? '210mm' : '297mm'};
+  width: ${width}px;
+  height: ${height}px;
   overflow: hidden;
+  direction: rtl;
+  font-family: 'Cairo', 'Tajawal', 'Noto Sans Arabic', sans-serif;
+}
+h1, h2, h3, h4, h5, h6, p, span, div {
+  font-family: 'Cairo', 'Tajawal', 'Noto Sans Arabic', sans-serif !important;
 }
 </style>
 </head>
@@ -283,7 +335,7 @@ ${cloneHtml}
         description: t("يتم الآن تجهيز ملف PDF للتحميل.", "Preparing PDF for download."),
       });
 
-      const exportHtml = generateExportHtml(posterRef.current, orientation);
+      const exportHtml = await generateExportHtml(posterRef.current, orientation);
 
       const response = await fetch('/api/export-poster', {
         method: 'POST',
@@ -338,7 +390,7 @@ ${cloneHtml}
         description: t("يتم الآن تجهيز الصورة للتحميل.", "Preparing image for download."),
       });
 
-      const exportHtml = generateExportHtml(posterRef.current, orientation);
+      const exportHtml = await generateExportHtml(posterRef.current, orientation);
 
       const response = await fetch('/api/export-poster', {
         method: 'POST',
@@ -567,6 +619,8 @@ ${cloneHtml}
                 onDownloadImage={handleDownloadImage}
                 onGenerateImage={handleGenerateImage}
                 onGenerateQrCode={handleGenerateQrCode}
+                onShareWhatsApp={() => handleShare("whatsapp")}
+                onShareTelegram={() => handleShare("telegram")}
                 orientation={orientation}
                 isGenerating={generateMutation.isPending}
                 isGeneratingImage={isGeneratingImage}
@@ -587,46 +641,19 @@ ${cloneHtml}
               />
 
               {posterContent && (
-                <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-5 shadow-lg shadow-slate-200/30 dark:shadow-slate-900/30 space-y-4">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-                      <Maximize2 className="w-4 h-4 text-teal-500" />
-                      معاينة قبل الطباعة
-                    </h3>
-                    <Button
-                      onClick={() => setIsPrintPreviewOpen(true)}
-                      className="w-full bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white"
-                      data-testid="button-print-preview"
-                    >
-                      <Printer className="w-4 h-4 ml-2" />
-                      فتح معاينة الحجم الكامل
-                    </Button>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-                      <Share2 className="w-4 h-4 text-teal-500" />
-                      مشاركة البوستر
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={() => handleShare("whatsapp")}
-                        className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-medium shadow-lg shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5 transition-all"
-                        data-testid="button-share-whatsapp"
-                      >
-                        <SiWhatsapp className="w-5 h-5" />
-                        واتساب
-                      </button>
-                      <button
-                        onClick={() => handleShare("telegram")}
-                        className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all"
-                        data-testid="button-share-telegram"
-                      >
-                        <SiTelegram className="w-5 h-5" />
-                        تيليجرام
-                      </button>
-                    </div>
-                  </div>
+                <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-5 shadow-lg shadow-slate-200/30 dark:shadow-slate-900/30">
+                  <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+                    <Maximize2 className="w-4 h-4 text-teal-500" />
+                    معاينة قبل الطباعة
+                  </h3>
+                  <Button
+                    onClick={() => setIsPrintPreviewOpen(true)}
+                    className="w-full bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white"
+                    data-testid="button-print-preview"
+                  >
+                    <Printer className="w-4 h-4 ml-2" />
+                    فتح معاينة الحجم الكامل
+                  </Button>
                 </div>
               )}
               
