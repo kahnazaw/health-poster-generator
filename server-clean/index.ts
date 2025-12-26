@@ -2,19 +2,17 @@ import express from "express";
 
 const app = express();
 
-// Route رئيسي حتى لا يظهر Application failed to respond
-app.get("/", (req, res) => {
+// 🚨 هذا السطر هو الأهم
+const PORT = Number(process.env.PORT) || 8080;
+
+app.get("/", (_req, res) => {
   res.send("Server is running ✅");
 });
 
-// Route اختبار API
-app.get("/health", (req, res) => {
+app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-// Railway يحدد PORT تلقائياً
-const PORT = process.env.PORT || 8080;
-
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
