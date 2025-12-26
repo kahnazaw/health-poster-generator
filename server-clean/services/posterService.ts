@@ -3,7 +3,7 @@ import { topics } from "../data/topics";
 export function generatePoster(topic: string) {
   const cleanTopic = topic.trim();
 
-  // 1️⃣ إذا موجود في المكتبة
+  // 1️⃣ محتوى ثابت من المكتبة
   if (topics[cleanTopic]) {
     return {
       source: "library",
@@ -11,7 +11,7 @@ export function generatePoster(topic: string) {
     };
   }
 
-  // 2️⃣ توليد ذكي (بديل مؤقت بدون AI API)
+  // 2️⃣ توليد ذكي (بديل مبدئي بدون AI خارجي)
   return {
     source: "generated",
     title: `التوعية بموضوع ${cleanTopic}`,
