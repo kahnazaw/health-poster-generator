@@ -432,6 +432,7 @@ export async function registerRoutes(
 
   // Server-side poster export using Puppeteer for proper Arabic RTL rendering
   app.post("/api/export-poster", requireAuth, async (req, res) => {
+    let browser = null;
     try {
       const { html, format, orientation } = req.body;
       
@@ -439,18 +440,28 @@ export async function registerRoutes(
         return res.status(400).json({ message: "HTML and format are required" });
       }
 
-      // Add Google Fonts for Arabic text rendering
+      // Enhanced fonts and styles for proper Arabic rendering
       const fontsAndStyles = `
-        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
         <style>
-          * { box-sizing: border-box; }
+          @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap');
+          * { 
+            box-sizing: border-box; 
+            font-family: 'Cairo', 'Tajawal', 'Noto Sans Arabic', sans-serif !important;
+          }
           body { 
             margin: 0; 
             padding: 0;
-            font-family: 'Cairo', 'Tajawal', sans-serif;
+            font-family: 'Cairo', 'Tajawal', 'Noto Sans Arabic', sans-serif !important;
             direction: rtl;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
           }
-          .font-display, h1, h2, h3, h4 { font-family: 'Cairo', 'Tajawal', sans-serif; }
+          h1, h2, h3, h4, h5, h6, p, span, div { 
+            font-family: 'Cairo', 'Tajawal', 'Noto Sans Arabic', sans-serif !important;
+          }
         </style>
       `;
       
@@ -458,7 +469,7 @@ export async function registerRoutes(
       const enhancedHtml = html.replace('</head>', `${fontsAndStyles}</head>`);
 
       const chromiumPath = process.env.CHROMIUM_PATH || '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium';
-      const browser = await puppeteer.launch({
+      browser = await puppeteer.launch({
         headless: true,
         executablePath: chromiumPath,
         args: [
@@ -467,13 +478,15 @@ export async function registerRoutes(
           '--disable-dev-shm-usage',
           '--disable-gpu',
           '--single-process',
-          '--font-render-hinting=none'
+          '--font-render-hinting=none',
+          '--disable-web-security',
+          '--allow-file-access-from-files'
         ]
       });
 
       const page = await browser.newPage();
       
-      // A4 dimensions in pixels at 96 DPI
+      // A4 dimensions in pixels at 96 DPI with higher resolution
       const width = orientation === 'landscape' ? 1122 : 794;
       const height = orientation === 'landscape' ? 794 : 1122;
       
@@ -481,38 +494,51 @@ export async function registerRoutes(
 
       // Use data URL to properly pass HTML with encoding
       const dataUrl = "data:text/html;charset=utf-8," + encodeURIComponent(enhancedHtml);
-      await page.goto(dataUrl, { waitUntil: 'networkidle0', timeout: 30000 });
+      await page.goto(dataUrl, { waitUntil: 'networkidle0', timeout: 60000 });
       
-      // Wait for fonts to load
+      // Wait for fonts to load completely
       await page.evaluate(() => document.fonts.ready);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       if (format === 'pdf') {
         const pdfBuffer = await page.pdf({
           format: 'A4',
           landscape: orientation === 'landscape',
           printBackground: true,
-          margin: { top: 0, right: 0, bottom: 0, left: 0 }
+          margin: { top: 0, right: 0, bottom: 0, left: 0 },
+          preferCSSPageSize: true
         });
         
         await browser.close();
+        browser = null;
         
         res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="poster-${Date.now()}.pdf"`);
         res.send(pdfBuffer);
       } else {
         const pngBuffer = await page.screenshot({
           type: 'png',
-          fullPage: true
+          fullPage: false,
+          clip: { x: 0, y: 0, width, height }
         });
         
         await browser.close();
+        browser = null;
         
         res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Content-Disposition', `attachment; filename="poster-${Date.now()}.png"`);
         res.send(pngBuffer);
       }
     } catch (error) {
       console.error("Export error:", error);
-      res.status(500).json({ message: "فشل تصدير البوستر" });
+      if (browser) {
+        try {
+          await browser.close();
+        } catch (e) {
+          console.error("Error closing browser:", e);
+        }
+      }
+      res.status(500).json({ message: "فشل تصدير البوستر", error: String(error) });
     }
   });
 

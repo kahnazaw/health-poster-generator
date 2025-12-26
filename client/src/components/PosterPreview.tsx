@@ -34,7 +34,7 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
     const posterHeightPx = isPortrait ? 1122 : 794;
     const scale = isPrintMode ? 1 : 0.32;
 
-    const PosterContent = () => (
+    const renderModernHeader = () => (
       <>
         <div 
           className="absolute top-0 left-0 w-full h-44"
@@ -84,6 +84,136 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
             </div>
           </div>
         </header>
+      </>
+    );
+
+    const renderClassicHeader = () => (
+      <header className="relative z-10 px-10 py-8" style={{ background: theme.primary }}>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4 text-white">
+            <div className="w-20 h-20 bg-white rounded-lg p-2 flex items-center justify-center">
+              <img src={ministryLogoUrl} alt="شعار وزارة الصحة" className="w-full h-full object-contain" crossOrigin="anonymous" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">وزارة الصحة العراقية</h2>
+              <h3 className="text-lg font-semibold opacity-90">دائرة صحة كركوك</h3>
+            </div>
+          </div>
+          <div className="w-20 h-20 bg-white rounded-lg p-2 flex items-center justify-center">
+            <img src={logoUrl} alt="شعار دائرة صحة كركوك" className="w-full h-full object-contain" crossOrigin="anonymous" />
+          </div>
+        </div>
+        <div className="mt-4 h-1 w-full" style={{ background: theme.secondary }} />
+      </header>
+    );
+
+    const renderMinimalHeader = () => (
+      <header className="relative z-10 px-10 py-6 flex justify-between items-center" style={{ borderBottom: `3px solid ${theme.primary}` }}>
+        <div className="flex items-center gap-3">
+          <img src={ministryLogoUrl} alt="شعار وزارة الصحة" className="w-14 h-14 object-contain" crossOrigin="anonymous" />
+          <div>
+            <h2 className="text-lg font-bold" style={{ color: theme.primary }}>وزارة الصحة العراقية</h2>
+            <h3 className="text-sm" style={{ color: theme.secondary }}>دائرة صحة كركوك</h3>
+          </div>
+        </div>
+        <img src={logoUrl} alt="شعار دائرة صحة كركوك" className="w-16 h-16 object-contain" crossOrigin="anonymous" />
+      </header>
+    );
+
+    const renderHeader = () => {
+      if (template === "minimal") return renderMinimalHeader();
+      if (template === "classic") return renderClassicHeader();
+      return renderModernHeader();
+    };
+
+    const renderPoints = () => {
+      if (!generatedContent) return null;
+      
+      if (template === "minimal") {
+        return (
+          <div className="space-y-3 flex-1">
+            {generatedContent.points.map((point, index) => (
+              <div key={index} className="flex items-start gap-4 py-2" style={{ borderRight: `3px solid ${theme.primary}`, paddingRight: '16px' }}>
+                <span className="text-lg font-medium leading-relaxed text-slate-700">{point}</span>
+              </div>
+            ))}
+          </div>
+        );
+      }
+      
+      if (template === "classic") {
+        return (
+          <div className="space-y-3 flex-1">
+            {generatedContent.points.map((point, index) => (
+              <div key={index} className="flex items-start gap-4 p-3" style={{ background: `${theme.bg}50`, border: `1px solid ${theme.primary}20` }}>
+                <div 
+                  className="flex-shrink-0 w-10 h-10 flex items-center justify-center text-xl font-bold text-white"
+                  style={{ background: theme.primary }}
+                >
+                  {index + 1}
+                </div>
+                <span className="text-lg font-medium leading-relaxed text-slate-700 pt-1">{point}</span>
+              </div>
+            ))}
+          </div>
+        );
+      }
+      
+      return (
+        <div className="space-y-4 flex-1">
+          {generatedContent.points.map((point, index) => (
+            <div
+              key={index}
+              className="flex items-start gap-5 p-4 rounded-2xl"
+              style={{ backgroundColor: `${theme.bg}80` }}
+            >
+              <div 
+                className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg"
+                style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})` }}
+              >
+                {index + 1}
+              </div>
+              <span className="text-xl font-medium leading-relaxed text-slate-700 pt-2">{point}</span>
+            </div>
+          ))}
+        </div>
+      );
+    };
+
+    const renderSlogan = () => {
+      if (template === "minimal") {
+        return (
+          <div className="mt-6 text-center">
+            <span className="text-lg font-bold" style={{ color: theme.primary }}>صحتك أمانة.. حافظ عليها</span>
+          </div>
+        );
+      }
+      
+      if (template === "classic") {
+        return (
+          <div className="mt-6 py-3 text-center" style={{ background: theme.primary }}>
+            <span className="text-xl font-bold text-white">صحتك أمانة.. حافظ عليها</span>
+          </div>
+        );
+      }
+      
+      return (
+        <div className="mt-8 flex justify-center">
+          <div 
+            className="flex items-center gap-3 px-8 py-4 rounded-full text-white font-bold text-xl shadow-2xl"
+            style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.primary}dd, ${theme.secondary})` }}
+          >
+            <Sparkles className="w-6 h-6" />
+            <span>صحتك أمانة.. حافظ عليها</span>
+            <Sparkles className="w-6 h-6" />
+          </div>
+        </div>
+      );
+    };
+
+    const PosterContent = () => (
+      <>
+        {renderHeader()}
 
         <main className="relative z-10 flex-1 px-12 py-6 flex flex-col">
           {isLoading ? (
@@ -97,28 +227,30 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
             <>
               <div className="text-center mb-8">
                 <h1 
-                  className="text-5xl font-extrabold leading-tight mb-4 font-display"
+                  className={`font-extrabold leading-tight mb-4 font-display ${template === "minimal" ? "text-4xl" : "text-5xl"}`}
                   style={{ 
-                    backgroundImage: `linear-gradient(135deg, ${theme.primary}, ${theme.primary}cc)`,
-                    backgroundClip: "text",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    color: "transparent"
+                    backgroundImage: template === "minimal" ? "none" : `linear-gradient(135deg, ${theme.primary}, ${theme.primary}cc)`,
+                    backgroundClip: template === "minimal" ? "unset" : "text",
+                    WebkitBackgroundClip: template === "minimal" ? "unset" : "text",
+                    WebkitTextFillColor: template === "minimal" ? theme.primary : "transparent",
+                    color: template === "minimal" ? theme.primary : "transparent"
                   }}
                 >
                   {generatedContent.title}
                 </h1>
-                <div 
-                  className="h-2 w-48 rounded-full mx-auto"
-                  style={{ background: `linear-gradient(90deg, ${theme.primary}, ${theme.secondary})` }}
-                />
+                {template !== "minimal" && (
+                  <div 
+                    className="h-2 w-48 rounded-full mx-auto"
+                    style={{ background: `linear-gradient(90deg, ${theme.primary}, ${theme.secondary})` }}
+                  />
+                )}
               </div>
 
               {generatedImage && (
                 <div className="flex justify-center mb-8">
                   <div 
-                    className="w-48 h-48 rounded-2xl overflow-hidden shadow-xl"
-                    style={{ border: `4px solid ${theme.secondary}` }}
+                    className={`overflow-hidden shadow-xl ${template === "minimal" ? "w-40 h-40 rounded-lg" : template === "classic" ? "w-44 h-44 rounded-lg" : "w-48 h-48 rounded-2xl"}`}
+                    style={{ border: template === "minimal" ? `2px solid ${theme.primary}` : `4px solid ${theme.secondary}` }}
                   >
                     <img 
                       src={generatedImage} 
@@ -130,36 +262,8 @@ export const PosterPreview = forwardRef<HTMLDivElement, PosterPreviewProps>(
                 </div>
               )}
 
-              <div className="space-y-4 flex-1">
-                {generatedContent.points.map((point, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-5 p-4 rounded-2xl"
-                    style={{ backgroundColor: `${theme.bg}80` }}
-                  >
-                    <div 
-                      className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg"
-                      style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})` }}
-                    >
-                      {index + 1}
-                    </div>
-                    <span className="text-xl font-medium leading-relaxed text-slate-700 pt-2">
-                      {point}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 flex justify-center">
-                <div 
-                  className="flex items-center gap-3 px-8 py-4 rounded-full text-white font-bold text-xl shadow-2xl"
-                  style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.primary}dd, ${theme.secondary})` }}
-                >
-                  <Sparkles className="w-6 h-6" />
-                  <span>صحتك أمانة.. حافظ عليها</span>
-                  <Sparkles className="w-6 h-6" />
-                </div>
-              </div>
+              {renderPoints()}
+              {renderSlogan()}
             </>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-slate-400 opacity-50">

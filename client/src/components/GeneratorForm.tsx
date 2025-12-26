@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Download, LayoutTemplate, FileText, UserCircle, Sparkles, Image, Palette, FileImage, QrCode, Layout } from "lucide-react";
+import { Loader2, Download, LayoutTemplate, FileText, UserCircle, Sparkles, Image, Palette, FileImage, QrCode, Layout, Share2 } from "lucide-react";
+import { SiWhatsapp, SiTelegram } from "react-icons/si";
 import type { ColorTheme, PosterTemplate } from "@/pages/Home";
 
 interface ApprovedTopic {
@@ -17,6 +18,8 @@ interface GeneratorFormProps {
   onDownloadImage?: () => void;
   onGenerateImage?: () => void;
   onGenerateQrCode?: () => void;
+  onShareWhatsApp?: () => void;
+  onShareTelegram?: () => void;
   orientation: "portrait" | "landscape";
   isGenerating: boolean;
   isGeneratingImage?: boolean;
@@ -43,6 +46,8 @@ export function GeneratorForm({
   onDownloadImage,
   onGenerateImage,
   onGenerateQrCode,
+  onShareWhatsApp,
+  onShareTelegram,
   orientation,
   isGenerating,
   isGeneratingImage,
@@ -315,36 +320,81 @@ export function GeneratorForm({
           )}
 
           {hasContent && (
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={onDownload}
-                className="
-                  py-3.5 rounded-xl font-bold text-white shadow-lg shadow-amber-500/25
-                  bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600
-                  hover:shadow-xl hover:shadow-amber-500/30 hover:-translate-y-0.5 active:translate-y-0
-                  flex items-center justify-center gap-2 transition-all duration-200
-                "
-                data-testid="button-download-pdf"
-              >
-                <Download className="w-5 h-5" />
-                {t("PDF", "PDF")}
-              </button>
-              {onDownloadImage && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={onDownloadImage}
+                  onClick={onDownload}
                   className="
-                    py-3.5 rounded-xl font-bold text-white shadow-lg shadow-blue-500/25
-                    bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600
-                    hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 active:translate-y-0
+                    py-3.5 rounded-xl font-bold text-white shadow-lg shadow-amber-500/25
+                    bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600
+                    hover:shadow-xl hover:shadow-amber-500/30 hover:-translate-y-0.5 active:translate-y-0
                     flex items-center justify-center gap-2 transition-all duration-200
                   "
-                  data-testid="button-download-image"
+                  data-testid="button-download-pdf"
                 >
-                  <FileImage className="w-5 h-5" />
-                  {t("صورة", "Image")}
+                  <Download className="w-5 h-5" />
+                  {t("PDF", "PDF")}
                 </button>
+                {onDownloadImage && (
+                  <button
+                    type="button"
+                    onClick={onDownloadImage}
+                    className="
+                      py-3.5 rounded-xl font-bold text-white shadow-lg shadow-blue-500/25
+                      bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600
+                      hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 active:translate-y-0
+                      flex items-center justify-center gap-2 transition-all duration-200
+                    "
+                    data-testid="button-download-image"
+                  >
+                    <FileImage className="w-5 h-5" />
+                    {t("صورة", "Image")}
+                  </button>
+                )}
+              </div>
+              
+              {(onShareWhatsApp || onShareTelegram) && (
+                <div className="pt-2">
+                  <p className="text-xs text-slate-500 mb-2 flex items-center gap-1.5">
+                    <Share2 className="w-3.5 h-3.5" />
+                    {t("مشاركة البوستر", "Share Poster")}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {onShareWhatsApp && (
+                      <button
+                        type="button"
+                        onClick={onShareWhatsApp}
+                        className="
+                          py-3 rounded-xl font-bold text-white shadow-lg shadow-green-500/25
+                          bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700
+                          hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5 active:translate-y-0
+                          flex items-center justify-center gap-2 transition-all duration-200
+                        "
+                        data-testid="button-share-whatsapp"
+                      >
+                        <SiWhatsapp className="w-5 h-5" />
+                        {t("واتساب", "WhatsApp")}
+                      </button>
+                    )}
+                    {onShareTelegram && (
+                      <button
+                        type="button"
+                        onClick={onShareTelegram}
+                        className="
+                          py-3 rounded-xl font-bold text-white shadow-lg shadow-sky-500/25
+                          bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700
+                          hover:shadow-xl hover:shadow-sky-500/30 hover:-translate-y-0.5 active:translate-y-0
+                          flex items-center justify-center gap-2 transition-all duration-200
+                        "
+                        data-testid="button-share-telegram"
+                      >
+                        <SiTelegram className="w-5 h-5" />
+                        {t("تيليجرام", "Telegram")}
+                      </button>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           )}
