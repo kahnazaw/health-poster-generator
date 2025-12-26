@@ -6,7 +6,8 @@
     "rootDir": ".",
     "moduleResolution": "Node",
     "esModuleInterop": true,
-    "strict": false
+    "strict": false,
+    "types": ["node"]
   },
-  "include": ["index.ts"]
+  "include": ["index.ts", "data/**/*.ts", "services/**/*.ts"]
 }
