@@ -1,27 +1,14 @@
-import express from "express";
-import cors from "cors";
-import { createServer } from "http";
-import type { Request, Response, NextFunction } from "express";
-
-const app = express();
-const server = createServer(app);
-
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.get("/", (_req: Request, res: Response) => {
-  res.send("Server is running ✅");
-});
-
-// Error handler
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(err);
-  res.status(500).json({ message: "Internal Server Error" });
-});
-
-const PORT = Number(process.env.PORT) || 5000;
-
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "outDir": "dist",
+    "rootDir": ".",
+    "esModuleInterop": true,
+    "strict": false,
+    "skipLibCheck": true
+  },
+  "include": ["index.ts"],
+  "exclude": ["node_modules"]
+}
